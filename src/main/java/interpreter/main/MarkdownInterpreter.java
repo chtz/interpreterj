@@ -17,39 +17,59 @@ public class MarkdownInterpreter {
 
 	@SuppressWarnings("unchecked")
 	private void run() {
+		boolean firstEmptyLine = false;
 		for (String s = gets(); s != null; s = gets()) {
-			puts(s);
+			if (s.isEmpty()) {
+				if (!firstEmptyLine) {
+					firstEmptyLine = true;
+					puts("");
+				}
+			}
+			else {
+				firstEmptyLine = false;
 			
-			if (s.startsWith("```script")) {
-				StringBuilder script = new StringBuilder(); 
-				while (!(s = gets()).startsWith("```")) {
-					puts(s);
-					if (script.length() > 0) {
-						script.append("\n");
+				if (s.startsWith("<sup><sub>Script Output (generated)</sub></sup>") 
+						|| s.startsWith("<sup><sub>Script Result (generated)</sub></sup>"))
+				{
+					while (!(s = gets()).equals("```")) {
+						//consume
 					}
-					script.append(s);
 				}
-				puts("```");
-				
-				StringBuilder scriptOut = new StringBuilder();
-				Interpreter i = new Interpreter(ec -> {
-			    	ec.registerFunction("puts", args -> {
-			    		if (scriptOut.length() > 0) {
-			    			scriptOut.append("\n");
-			    		}
-			    		scriptOut.append(args.get(0));
-			    		return null;
-			        });
-				});
-				i.parse(script.toString());
-				EvaluationResult r = i.evaluate();
-				
-				if (scriptOut.length() > 0) {
-					puts("\n<sup><sub>Script Output (generated)</sub></sup>\n```output\n" + scriptOut.toString() + "\n```");
+				else if (s.startsWith("```script")) {
+					puts(s);
+					StringBuilder script = new StringBuilder(); 
+					while (!(s = gets()).startsWith("```")) {
+						puts(s);
+						if (script.length() > 0) {
+							script.append("\n");
+						}
+						script.append(s);
+					}
+					puts("```");
+					
+					StringBuilder scriptOut = new StringBuilder();
+					Interpreter i = new Interpreter(ec -> {
+				    	ec.registerFunction("puts", args -> {
+				    		if (scriptOut.length() > 0) {
+				    			scriptOut.append("\n");
+				    		}
+				    		scriptOut.append(args.get(0));
+				    		return null;
+				        });
+					});
+					i.parse(script.toString());
+					EvaluationResult r = i.evaluate();
+					
+					if (scriptOut.length() > 0) {
+						puts("\n<sup><sub>Script Output (generated)</sub></sup>\n```output\n" + scriptOut.toString() + "\n```");
+					}
+					
+					if (r.getResult() != null) {
+						puts("\n<sup><sub>Script Result (generated)</sub></sup>\n```result\n" + r.getResult().toString() + "\n```");
+					}
 				}
-				
-				if (r.getResult() != null) {
-					puts("\n<sup><sub>Script Result (generated)</sub></sup>\n```result\n" + r.getResult().toString() + "\n```");
+				else {
+					puts(s);
 				}
 			}
 		}

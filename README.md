@@ -40,10 +40,6 @@ let fullGreeting = greeting + ", " + name; // "Hello, John"
 Hello, John
 ```
 
-<sup><sub>Script Result (generated)</sub></sup>
-```result
-Hello, John
-```
 
 ### Variable Scoping
 
@@ -66,11 +62,6 @@ puts(x);       // Outputs: 10
 10.0
 ```
 
-<sup><sub>Script Output (generated)</sub></sup>
-```output
-20.0
-10.0
-```
 
 ### Control Flow
 
@@ -101,11 +92,6 @@ Number is 50 or less
 10.0
 ```
 
-<sup><sub>Script Output (generated)</sub></sup>
-```output
-Number is 50 or less
-10.0
-```
 
 ### Functions
 
@@ -139,12 +125,6 @@ puts(triple(5));  // Outputs: 15
 15.0
 ```
 
-<sup><sub>Script Output (generated)</sub></sup>
-```output
-8.0
-10.0
-15.0
-```
 
 ### Closures and State
 
@@ -173,12 +153,6 @@ puts(counter());  // Outputs: 3
 3.0
 ```
 
-<sup><sub>Script Output (generated)</sub></sup>
-```output
-1.0
-2.0
-3.0
-```
 
 ### Expressions and Operator Precedence
 
@@ -206,14 +180,6 @@ true
 true
 ```
 
-<sup><sub>Script Output (generated)</sub></sup>
-```output
-11.0
-16.0
-true
-true
-true
-```
 
 ### Nested Functions and Recursion
 
@@ -252,11 +218,6 @@ puts(f2(3));  // Outputs: 6 (1 + 2 + 3)
 6.0
 ```
 
-<sup><sub>Script Output (generated)</sub></sup>
-```output
-120.0
-6.0
-```
 
 ### Error Handling
 
