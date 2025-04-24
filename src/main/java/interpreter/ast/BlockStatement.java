@@ -36,10 +36,12 @@ public class BlockStatement extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Create a new scope for this block
+        EvaluationContext blockContext = context.extend();
         Object result = null;
         
         for (Node statement : statements) {
-            result = statement.evaluate(context);
+            result = statement.evaluate(blockContext);
             
             // Early return from blocks if we hit a return statement
             if (result instanceof ReturnValue) {

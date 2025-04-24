@@ -503,8 +503,51 @@ public class InterpreterTest {
     @DisplayName("Test error for invalid token")
     public void testInvalidToken() {
         assertParseError(
-            "let x = @;",  // @ is not a valid token
-            "ILLEGAL"
+            "let x = @;", // @ is not a valid token
+            "No prefix parse function for ILLEGAL"
+        );
+    }
+    
+    @Test
+    @DisplayName("Test block-scoped variables")
+    public void testBlockScopedVariables() {
+        // Test basic block scoping - outer variable should remain unchanged
+        assertProgram(
+            "let x = 10;\n" +
+            "{\n" +
+            "  let x = 20;\n" +
+            "  let y = 30;\n" +
+            "}\n" +
+            "// x should still be 10, y should be undefined\n" +
+            "x;",
+            "10.0"
+        );
+        
+        // Test that variables defined in blocks are not accessible outside
+        assertRuntimeError(
+            "let x = 10;\n" +
+            "{\n" +
+            "  let y = 20;\n" +
+            "}\n" +
+            "y;", // y should not be accessible here
+            "Undefined variable 'y'"
+        );
+        
+        // Test nested blocks
+        assertProgram(
+            "let x = 10;\n" +
+            "let result = 0;\n" +
+            "{\n" +
+            "  let x = 20;\n" +
+            "  result = result + x;\n" +
+            "  {\n" +
+            "    let x = 30;\n" +
+            "    result = result + x;\n" +
+            "  }\n" +
+            "  result = result + x;\n" +
+            "}\n" +
+            "result + x;", // Should be (0+20+30+20)+10 = 80
+            "80.0"
         );
     }
     
