@@ -44,8 +44,7 @@ public class Parser {
         SUM(6),     // + -
         PRODUCT(7), // * / %
         PREFIX(8),  // -x !x
-        CALL(9),    // myFunction(x)
-        MEMBER(10); // obj.property, array[index]
+        CALL(9);    // myFunction(x)
         
         private final int value;
         

@@ -51,8 +51,6 @@ public class CallExpression extends Node {
         // Call the function
         if (function instanceof CallableFunction) {
             return ((CallableFunction) function).apply(args);
-//        } else if (function instanceof NamedCallableFunction) {
-//            return ((NamedCallableFunction) function).apply(args);
         } else {
             throw new RuntimeError(
                     "Not a function: " + function,
