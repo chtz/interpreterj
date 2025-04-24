@@ -33,10 +33,6 @@ public class MarkdownInterpreter {
 				
 				StringBuilder scriptOut = new StringBuilder();
 				Interpreter i = new Interpreter(ec -> {
-//					ec.registerFunction("gets", args -> {
-//						return null;
-//			        });
-			    	
 			    	ec.registerFunction("puts", args -> {
 			    		if (scriptOut.length() > 0) {
 			    			scriptOut.append("\n");

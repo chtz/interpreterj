@@ -1,10 +1,10 @@
 # InterpreterJ
 
-InterpreterJ is a simple yet powerful interpreted scripting language implemented in Java. It supports functions, closures, variable declarations, control flow, and more.
+InterpreterJ is a simple yet powerful interpreted scripting language implemented in Java. It supports functions, closures, variable declarations, and control flow structures.
 
 ## Language Introduction
 
-InterpreterJ is a dynamically-typed scripting language with syntax similar to JavaScript. Here's a quick introduction to its main features.
+InterpreterJ is a dynamically-typed language with syntax similar to JavaScript. Below is an introduction to its main features.
 
 ### Basic Syntax and Data Types
 
@@ -40,6 +40,11 @@ let fullGreeting = greeting + ", " + name; // "Hello, John"
 Hello, John
 ```
 
+<sup><sub>Script Result (generated)</sub></sup>
+```result
+Hello, John
+```
+
 ### Variable Scoping
 
 Variables are block-scoped, meaning they're only accessible within the block they're defined in:
@@ -53,6 +58,12 @@ let x = 10;
 }
 puts(x);       // Outputs: 10
 // puts(y);    // Error: Undefined variable 'y'
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+20.0
+10.0
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -82,6 +93,12 @@ while (i < 5) {
   i = i + 1;
 }
 puts(sum);  // Outputs: 10 (0+1+2+3+4)
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+Number is 50 or less
+10.0
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -122,6 +139,13 @@ puts(triple(5));  // Outputs: 15
 15.0
 ```
 
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+8.0
+10.0
+15.0
+```
+
 ### Closures and State
 
 Functions can access and modify variables from their enclosing scope:
@@ -149,6 +173,13 @@ puts(counter());  // Outputs: 3
 3.0
 ```
 
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+1.0
+2.0
+3.0
+```
+
 ### Expressions and Operator Precedence
 
 InterpreterJ follows standard operator precedence rules:
@@ -164,6 +195,15 @@ puts(true && (false || true)); // Outputs: true (true && (false || true))
 
 // Comparison operators
 puts(3 + 4 > 5 && 10 % 3 == 1); // Outputs: true ((3 + 4 > 5) && (10 % 3 == 1))
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+11.0
+16.0
+true
+true
+true
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -204,6 +244,12 @@ def outer(x) {
 let f1 = outer(1);
 let f2 = f1(2);
 puts(f2(3));  // Outputs: 6 (1 + 2 + 3)
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+120.0
+6.0
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -286,14 +332,14 @@ BooleanLiteral     ::= "true" | "false"
 NullLiteral        ::= "null"
 ```
 
-## Language Features
+## Language Features Summary
 
-InterpreterJ supports:
+InterpreterJ includes:
 
-1. **Variables**: Declare variables with `let` keyword, with block-level scoping.
-2. **Functions**: Define functions with the `def` keyword, supporting parameters and return values.
-3. **Closures**: Functions can access and modify variables from their enclosing scopes.
-4. **Control Flow**: `if`/`else` statements and `while` loops.
+1. **Variables**: Declared with `let` keyword and featuring block-level scoping
+2. **Functions**: Defined with `def` keyword, supporting parameters and return values
+3. **Closures**: Functions can capture variables from enclosing scopes
+4. **Control Flow**: `if`/`else` statements and `while` loops
 5. **Data Types**:
    - Numbers (floating point)
    - Strings (with single or double quotes)
