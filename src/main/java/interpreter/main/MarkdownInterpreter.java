@@ -1,8 +1,12 @@
 package interpreter.main;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 
 import interpreter.main.Interpreter.EvaluationResult;
 
@@ -12,11 +16,16 @@ import interpreter.main.Interpreter.EvaluationResult;
  * </pre>
  */
 public class MarkdownInterpreter {
-	private DataInputStream in = new DataInputStream(System.in);
-	private DataOutputStream out = new DataOutputStream(System.out);
+	final BufferedReader in;
+	final PrintWriter out;
 
+	public MarkdownInterpreter(InputStream in, OutputStream out) {
+		this.in = new BufferedReader(new InputStreamReader(in));
+		this.out = new PrintWriter(new OutputStreamWriter(out));
+	}
+	
 	@SuppressWarnings("unchecked")
-	private void run() {
+	public void run() {
 		boolean firstEmptyLine = false;
 		for (String s = gets(); s != null; s = gets()) {
 			if (s.isEmpty()) {
@@ -37,7 +46,7 @@ public class MarkdownInterpreter {
 				}
 				else if (s.startsWith("```script")) {
 					puts(s);
-					StringBuilder script = new StringBuilder(); 
+					final StringBuilder script = new StringBuilder(); 
 					while (!(s = gets()).startsWith("```")) {
 						puts(s);
 						if (script.length() > 0) {
@@ -47,7 +56,7 @@ public class MarkdownInterpreter {
 					}
 					puts("```");
 					
-					StringBuilder scriptOut = new StringBuilder();
+					final StringBuilder scriptOut = new StringBuilder();
 					Interpreter i = new Interpreter(ec -> {
 				    	ec.registerFunction("puts", args -> {
 				    		if (scriptOut.length() > 0) {
@@ -73,9 +82,9 @@ public class MarkdownInterpreter {
 				}
 			}
 		}
+		out.flush();
 	}
 	
-	@SuppressWarnings("deprecation")
 	private String gets() {
 		try {
 			return in.readLine();
@@ -85,15 +94,11 @@ public class MarkdownInterpreter {
 	}
 	
 	private void puts(String s) {
-		try {
-			out.writeBytes(s);
-			out.writeBytes("\n");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		out.write(s);
+		out.write('\n');
 	}
 	
 	public static void main(String[] args) {
-		new MarkdownInterpreter().run();
+		new MarkdownInterpreter(System.in, System.out).run();
 	}
 }

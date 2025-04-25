@@ -1,8 +1,10 @@
 package interpreter.main;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -238,10 +240,9 @@ public class Interpreter {
 	}
     
     public final static class StdIOLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
-		final DataInputStream in = new DataInputStream(System.in);
-		final DataOutputStream out = new DataOutputStream(System.out);
+		final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		final PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public void accept(EvaluationContext ec) {
 	    	ec.registerFunction("gets", args -> {
@@ -253,13 +254,9 @@ public class Interpreter {
 	        });
 	    	
 	    	ec.registerFunction("puts", args -> {
-	    		try {
-		    		out.writeBytes(args.get(0).toString());
-		    		out.writeBytes("\n");
-		    		return null;
-	    		} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+	    		out.write(args.get(0).toString());
+	    		out.write('\n');
+	    		return null;
 	        });
 		}
 	}

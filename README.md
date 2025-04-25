@@ -311,5 +311,4 @@ InterpreterJ includes:
    - Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
    - Logical: `&&`, `||`, `!`
 7. **Comments**:
-   - Single-line: `// comment`
-   - Multi-line: `/* comment */`
+   - Single
