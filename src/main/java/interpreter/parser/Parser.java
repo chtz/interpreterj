@@ -2,6 +2,7 @@ package interpreter.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,6 +20,7 @@ import interpreter.ast.IfStatement;
 import interpreter.ast.IndexAssignmentStatement;
 import interpreter.ast.IndexExpression;
 import interpreter.ast.InfixExpression;
+import interpreter.ast.MapLiteral;
 import interpreter.ast.Node;
 import interpreter.ast.NullLiteral;
 import interpreter.ast.NumberLiteral;
@@ -147,6 +149,7 @@ public class Parser {
         registerPrefix(TokenType.MINUS, this::parsePrefixExpression);
         registerPrefix(TokenType.NOT, this::parsePrefixExpression);
         registerPrefix(TokenType.LBRACKET, this::parseArrayLiteral);
+        registerPrefix(TokenType.LBRACE, this::parseMapLiteral);
         
         // Register infix parse functions
         registerInfix(TokenType.PLUS, this::parseInfixExpression);
@@ -844,9 +847,9 @@ public class Parser {
     }
     
     /**
-     * Parse an index expression (array[index])
+     * Parse an index expression (collection[index])
      */
-    private Node parseIndexExpression(Node array) {
+    private Node parseIndexExpression(Node collection) {
         Token token = currentToken;  // '[' token
         
         nextToken();  // Move past '['
@@ -856,22 +859,22 @@ public class Parser {
             return null;
         }
         
-        IndexExpression indexExpression = new IndexExpression(array, index);
+        IndexExpression indexExpression = new IndexExpression(collection, index);
         indexExpression.setPosition(token.getLine(), token.getColumn());
         
         return indexExpression;
     }
     
     /**
-     * Parse an index assignment statement (array[index] = value)
+     * Parse an index assignment statement (collection[index] = value)
      */
     private Node parseIndexAssignmentStatement() {
         Token token = currentToken;  // identifier token
         String identifier = currentToken.getLiteral();
         
-        // Create the array identifier node
-        Identifier array = new Identifier(identifier);
-        array.setPosition(token.getLine(), token.getColumn());
+        // Create the collection identifier node
+        Identifier collection = new Identifier(identifier);
+        collection.setPosition(token.getLine(), token.getColumn());
         
         nextToken();  // Move to '['
         
@@ -902,9 +905,72 @@ public class Parser {
             nextToken();  // Optional semicolon
         }
         
-        IndexAssignmentStatement indexAssignmentStatement = new IndexAssignmentStatement(array, index, value);
+        IndexAssignmentStatement indexAssignmentStatement = new IndexAssignmentStatement(collection, index, value);
         indexAssignmentStatement.setPosition(token.getLine(), token.getColumn());
         
         return indexAssignmentStatement;
+    }
+    
+    /**
+     * Parse a map literal expression {key1: value1, key2: value2}
+     */
+    private Node parseMapLiteral() {
+        Token token = currentToken;  // '{' token
+        Map<Node, Node> pairs = parseMapPairs();
+        
+        MapLiteral mapLiteral = new MapLiteral(pairs);
+        mapLiteral.setPosition(token.getLine(), token.getColumn());
+        
+        return mapLiteral;
+    }
+    
+    /**
+     * Parse map key-value pairs
+     */
+    private Map<Node, Node> parseMapPairs() {
+        Map<Node, Node> pairs = new LinkedHashMap<>();
+        
+        // Handle the case of empty map: {}
+        if (peekTokenIs(TokenType.RBRACE)) {
+            nextToken();
+            return pairs;
+        }
+        
+        nextToken();
+        
+        // Parse the first key-value pair
+        Node key = parseExpression(Precedence.LOWEST);
+        
+        if (!expectPeek(TokenType.COLON)) {
+            return null;
+        }
+        
+        nextToken();
+        Node value = parseExpression(Precedence.LOWEST);
+        
+        pairs.put(key, value);
+        
+        // Parse the rest of the key-value pairs
+        while (peekTokenIs(TokenType.COMMA)) {
+            nextToken();  // consume comma
+            nextToken();  // move to next key
+            
+            key = parseExpression(Precedence.LOWEST);
+            
+            if (!expectPeek(TokenType.COLON)) {
+                return null;
+            }
+            
+            nextToken();
+            value = parseExpression(Precedence.LOWEST);
+            
+            pairs.put(key, value);
+        }
+        
+        if (!expectPeek(TokenType.RBRACE)) {
+            return null;
+        }
+        
+        return pairs;
     }
 } 

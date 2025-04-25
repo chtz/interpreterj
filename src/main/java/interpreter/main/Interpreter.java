@@ -6,7 +6,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import interpreter.ast.Program;
@@ -118,7 +120,8 @@ public class Interpreter {
     @SuppressWarnings("unchecked")
 	public Interpreter() {
     	this(new ResourceQuota(), new DefaultLibraryFunctionsInitializer(), 
-             new StdIOLibraryFunctionsInitializer(), new ArrayLibraryFunctionsInitializer());
+             new StdIOLibraryFunctionsInitializer(), new MapLibraryFunctionsInitializer(),
+             new ArrayLibraryFunctionsInitializer());
     }
     
     /**
@@ -127,7 +130,8 @@ public class Interpreter {
     @SuppressWarnings("unchecked")
     public Interpreter(ResourceQuota resourceQuota) {
         this(resourceQuota, new DefaultLibraryFunctionsInitializer(), 
-             new StdIOLibraryFunctionsInitializer(), new ArrayLibraryFunctionsInitializer());
+             new StdIOLibraryFunctionsInitializer(), new MapLibraryFunctionsInitializer(),
+             new ArrayLibraryFunctionsInitializer());
     }
     
     @SuppressWarnings("unchecked")
@@ -306,7 +310,13 @@ public class Interpreter {
                     return (double) ((String) arg).length();
                 }
                 
-                throw new RuntimeException("len() argument must be an array or string");
+                if (arg instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> map = (Map<Object, Object>) arg;
+                    return (double) map.size();
+                }
+                
+                throw new RuntimeException("len() argument must be an array, string, or map");
             });
             
             // push(array, value) - Add a value to the end of an array
@@ -357,26 +367,81 @@ public class Interpreter {
                     throw new RuntimeException("delete() requires 2 arguments");
                 }
                 
-                Object arrayArg = args.get(0);
-                Object indexArg = args.get(1);
+                Object collectionArg = args.get(0);
+                Object keyOrIndexArg = args.get(1);
                 
-                if (!(arrayArg instanceof List)) {
-                    throw new RuntimeException("First argument to delete() must be an array");
+                if (collectionArg instanceof List) {
+                    if (!(keyOrIndexArg instanceof Number)) {
+                        throw new RuntimeException("Second argument to delete() must be a number for arrays");
+                    }
+                    
+                    @SuppressWarnings("unchecked")
+                    List<Object> array = (List<Object>) collectionArg;
+                    int index = ((Number) keyOrIndexArg).intValue();
+                    
+                    if (index < 0 || index >= array.size()) {
+                        throw new RuntimeException("Array index out of bounds: " + index);
+                    }
+                    
+                    return array.remove(index);
+                } else if (collectionArg instanceof Map) {
+                    if (!(keyOrIndexArg instanceof String || keyOrIndexArg instanceof Number)) {
+                        throw new RuntimeException("Second argument to delete() for maps must be a string or number");
+                    }
+                    
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> map = (Map<Object, Object>) collectionArg;
+                    
+                    if (!map.containsKey(keyOrIndexArg)) {
+                        return null; // Key doesn't exist
+                    }
+                    
+                    return map.remove(keyOrIndexArg);
                 }
                 
-                if (!(indexArg instanceof Number)) {
-                    throw new RuntimeException("Second argument to delete() must be a number");
+                throw new RuntimeException("First argument to delete() must be an array or map");
+            });
+        }
+    }
+    
+    /**
+     * Library initializer for map-related functions
+     */
+    public final static class MapLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
+        @Override
+        public void accept(EvaluationContext ec) {
+            // keys(map) - Return array of all keys in the map
+            ec.registerFunction("keys", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("keys() requires 1 argument");
+                }
+                
+                Object arg = args.get(0);
+                if (!(arg instanceof Map)) {
+                    throw new RuntimeException("Argument to keys() must be a map");
                 }
                 
                 @SuppressWarnings("unchecked")
-                List<Object> array = (List<Object>) arrayArg;
-                int index = ((Number) indexArg).intValue();
+                Map<Object, Object> map = (Map<Object, Object>) arg;
                 
-                if (index < 0 || index >= array.size()) {
-                    throw new RuntimeException("Array index out of bounds: " + index);
+                return new ArrayList<>(map.keySet());
+            });
+            
+            // values(map) - Return array of all values in the map
+            ec.registerFunction("values", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("values() requires 1 argument");
                 }
                 
-                return array.remove(index);
+                Object arg = args.get(0);
+                if (!(arg instanceof Map)) {
+                    throw new RuntimeException("Argument to values() must be a map");
+                }
+                
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> map = (Map<Object, Object>) arg;
+                
+                return new ArrayList<>(map.values());
             });
         }
     }

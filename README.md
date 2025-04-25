@@ -11,6 +11,7 @@ InterpreterJ is a simple yet powerful interpreted scripting language implemented
    - [Control Flow](#control-flow)
    - [Functions and Closures](#functions-and-closures)
    - [Arrays](#arrays)
+   - [Maps/Dictionaries](#maps-dictionaries)
    - [Comments](#comments)
 3. [Built-in Functions](#built-in-functions)
 4. [Language Grammar (EBNF)](#language-grammar-ebnf)
@@ -29,6 +30,7 @@ InterpreterJ is a dynamically-typed language designed for simplicity and ease of
 - **First-class Functions**: Functions as values, supporting closures
 - **Block Scoping**: Variables are scoped to their containing block
 - **Arrays**: Native array support with built-in utility functions
+- **Maps/Dictionaries**: Native support for key-value collections
 - **Resource Control**: Built-in protection against infinite loops and recursion
 - **Easy Embedding**: Simple Java API to embed in your applications
 
@@ -335,6 +337,72 @@ Sum: 209.0
 ```
 
 
+### Maps/Dictionaries
+
+Maps (also known as dictionaries) are collections of key-value pairs where keys can be strings or numbers:
+
+```script
+// Map creation
+let emptyMap = {};
+let person = {"name": "Alice", "age": 30, "isActive": true};
+puts(person["name"]);  // Output: Alice
+
+// Mixed key types
+let mixed = {"a": 1, 2: "b", 3: true};
+puts(mixed["a"]);  // Output: 1.0
+puts(mixed[2]);    // Output: b
+
+// Map length
+puts(len(person));  // Output: 3.0
+
+// Modifying map elements
+person["age"] = 31;
+puts(person["age"]);  // Output: 31.0
+
+// Adding new key-value pairs
+person["email"] = "alice@example.com";
+puts(len(person));  // Output: 4.0
+
+// Getting keys and values
+let keys = keys(person);    // Returns an array of keys
+let values = values(person);  // Returns an array of values
+
+puts(len(keys));    // Output: 4.0
+puts(values[0]);    // Output depends on order, one of the values
+
+// Deleting entries
+delete(person, "email");
+puts(len(person));  // Output: 3.0
+
+// Accessing non-existent key returns null
+// puts(person["email"]);  // Output: null // FIXME throws exception
+
+// Nested maps and arrays
+let complex = {
+  "user": {"id": 123, "name": "Bob"},
+  "items": [1, 2, 3]
+};
+
+puts(complex["user"]["name"]);  // Output: Bob
+puts(complex["items"][1]);      // Output: 2.0
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
+Alice
+1.0
+b
+3.0
+31.0
+4.0
+4.0
+Alice
+3.0
+Bob
+2.0
+```
+
+
 ### Comments
 
 InterpreterJ supports two types of comments:
@@ -390,6 +458,19 @@ puts(len(arr));          // Output: 3.0
 delete(arr, 0);          // Remove element at index 0
 puts(arr[0]);            // Output: 2.0
 puts(len(arr));          // Output: 2.0
+
+// Map functions
+let map = {"a": 1, "b": 2, "c": 3};
+puts(len(map));           // Get map size: 3.0
+
+let mapKeys = keys(map);  // Get array of keys
+puts(mapKeys[0]);         // Output: a (order may vary)
+
+let mapValues = values(map);  // Get array of values
+puts(mapValues[0]);       // Output: 1.0 (order may vary)
+
+delete(map, "b");         // Remove entry with key "b"
+puts(len(map));           // Output: 2.0
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -402,6 +483,10 @@ Hello, World!
 4.0
 3.0
 2.0
+2.0
+3.0
+a
+1.0
 2.0
 ```
 
@@ -460,6 +545,7 @@ PrimaryExpression  ::= Identifier
                       | BooleanLiteral
                       | NullLiteral
                       | ArrayLiteral
+                      | MapLiteral
                       | "(" Expression ")"
 
 /* Literals and Identifiers */
@@ -470,6 +556,8 @@ StringLiteral      ::= '"' [^"]* '"' | "'" [^']* "'"
 BooleanLiteral     ::= "true" | "false"
 NullLiteral        ::= "null"
 ArrayLiteral       ::= "[" (Expression ("," Expression)*)? "]"
+MapLiteral         ::= "{" (MapEntry ("," MapEntry)*)? "}"
+MapEntry           ::= Expression ":" Expression
 
 /* Comments */
 Comment            ::= SingleLineComment | MultiLineComment

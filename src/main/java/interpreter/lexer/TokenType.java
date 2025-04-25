@@ -55,7 +55,8 @@ public enum TokenType {
     LBRACE("{"),
     RBRACE("}"),
     LBRACKET("["),
-    RBRACKET("]");
+    RBRACKET("]"),
+    COLON(":");
     
     private final String literal;
     

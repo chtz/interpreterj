@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import interpreter.main.Interpreter.ArrayLibraryFunctionsInitializer;
 import interpreter.main.Interpreter.DefaultLibraryFunctionsInitializer;
 import interpreter.main.Interpreter.EvaluationResult;
+import interpreter.main.Interpreter.MapLibraryFunctionsInitializer;
 import interpreter.main.Interpreter.ParseResult;
 
 /**
@@ -62,6 +63,7 @@ public class MarkdownInterpreter {
 					final StringBuilder scriptOut = new StringBuilder();
 					Interpreter i = new Interpreter(ec -> {
 						new ArrayLibraryFunctionsInitializer().accept(ec); // FIXME better way to replace parts of std lib
+						new MapLibraryFunctionsInitializer().accept(ec);
 						new DefaultLibraryFunctionsInitializer().accept(ec);
 				    	ec.registerFunction("puts", args -> {
 				    		if (scriptOut.length() > 0) {
