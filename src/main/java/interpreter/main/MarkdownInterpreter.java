@@ -8,7 +8,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
+import interpreter.main.Interpreter.ArrayLibraryFunctionsInitializer;
+import interpreter.main.Interpreter.DefaultLibraryFunctionsInitializer;
 import interpreter.main.Interpreter.EvaluationResult;
+import interpreter.main.Interpreter.ParseResult;
 
 /**
  * <pre>
@@ -40,41 +43,54 @@ public class MarkdownInterpreter {
 				if (s.startsWith("<sup><sub>Script Output (generated)</sub></sup>") 
 						|| s.startsWith("<sup><sub>Script Result (generated)</sub></sup>"))
 				{
-					while (!(s = gets()).equals("```")) {
+					while (!(s = gets()).trim().equals("```")) {
 						//consume
 					}
 				}
-				else if (s.startsWith("```script")) {
-					puts(s);
+				else if (s.trim().startsWith("```script")) {
+					puts(s.trim());
 					final StringBuilder script = new StringBuilder(); 
-					while (!(s = gets()).startsWith("```")) {
+					while (!(s = gets()).trim().startsWith("```")) {
 						puts(s);
 						if (script.length() > 0) {
 							script.append("\n");
 						}
-						script.append(s);
+						script.append(s.trim());
 					}
 					puts("```");
 					
 					final StringBuilder scriptOut = new StringBuilder();
 					Interpreter i = new Interpreter(ec -> {
+						new ArrayLibraryFunctionsInitializer().accept(ec); // FIXME better way to replace parts of std lib
+						new DefaultLibraryFunctionsInitializer().accept(ec);
 				    	ec.registerFunction("puts", args -> {
 				    		if (scriptOut.length() > 0) {
 				    			scriptOut.append("\n");
 				    		}
-				    		scriptOut.append(args.get(0));
+				    		scriptOut.append(args.get(0).toString());
 				    		return null;
 				        });
 					});
-					i.parse(script.toString());
-					EvaluationResult r = i.evaluate();
+					ParseResult pr = i.parse(script.toString());
 					
-					if (scriptOut.length() > 0) {
-						puts("\n<sup><sub>Script Output (generated)</sub></sup>\n```output\n" + scriptOut.toString() + "\n```");
+					if (!pr.isSuccess()) {
+						puts("\n<sup><sub>Script Output (generated)</sub></sup>\n```output\nParse error: " + Interpreter.formatErrors(pr.getErrors()) + "\n```");
 					}
-					
-					if (r.getResult() != null) {
-						puts("\n<sup><sub>Script Result (generated)</sub></sup>\n```result\n" + r.getResult().toString() + "\n```");
+					else {
+						EvaluationResult r = i.evaluate();
+						
+						if (!r.isSuccess()) {
+							puts("\n<sup><sub>Script Output (generated)</sub></sup>\n```output\nEval error: " + Interpreter.formatErrors(r.getErrors()) + "\n```");	
+						}
+						else {
+							if (scriptOut.length() > 0) {
+								puts("\n<sup><sub>Script Output (generated)</sub></sup>\n```output\n" + scriptOut.toString() + "\n```");
+							}
+							
+							if (r.getResult() != null) {
+								puts("\n<sup><sub>Script Result (generated)</sub></sup>\n```result\n" + r.getResult().toString() + "\n```");
+							}
+						}
 					}
 				}
 				else {
