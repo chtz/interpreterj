@@ -1,10 +1,13 @@
 package interpreter.util;
 
+import interpreter.runtime.ResourceExhaustionError;
+import interpreter.runtime.ResourceExhaustionError.ResourceLimitType;
+import interpreter.runtime.ResourceQuota;
+
 /**
  * Utility class with common evaluation methods
  */
 public class Evaluator {
-    
     /**
      * Check if a value is truthy in the context of conditionals
      * 
@@ -58,12 +61,21 @@ public class Evaluator {
      * @param left The left operand
      * @param operator The infix operator (+, -, *, /, etc.)
      * @param right The right operand
+     * @param resourceQuota The resource quota containing the max string length limit
      * @return The result of the operation
+     * @throws ResourceExhaustionError if string concatenation would result in a string 
+     *         that exceeds the maximum allowed length
      */
-    public static Object applyInfixOperator(Object left, String operator, Object right) {
+    public static Object applyInfixOperator(Object left, String operator, Object right, ResourceQuota resourceQuota) throws ResourceExhaustionError {
         // Handle special case for string concatenation
         if (operator.equals("+") && (left instanceof String || right instanceof String)) {
-            return String.valueOf(left) + String.valueOf(right);
+            String leftStr = String.valueOf(left);
+            String rightStr = String.valueOf(right);
+            
+            // Check for potential string size violation
+            checkStringLength(leftStr, rightStr, resourceQuota);
+            
+            return leftStr + rightStr;
         }
         
         // Handle number operations
@@ -95,5 +107,25 @@ public class Evaluator {
         }
         
         return null;
+    }
+    
+    /**
+     * Check if concatenating two strings would exceed the maximum string length
+     * 
+     * @param left First string in the concatenation
+     * @param right Second string in the concatenation
+     * @param resourceQuota The resource quota containing the max string length limit
+     * @throws ResourceExhaustionError if the resulting string would be too long
+     */
+    private static void checkStringLength(String left, String right, ResourceQuota resourceQuota) throws ResourceExhaustionError {
+        int leftLength = left != null ? left.length() : 0;
+        int rightLength = right != null ? right.length() : 0;
+        
+        if (leftLength + rightLength > resourceQuota.getMaxStringLength()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.VARIABLE_COUNT, // Using VARIABLE_COUNT as it's closest to memory exhaustion
+                0, 0
+            );
+        }
     }
 } 

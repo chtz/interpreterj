@@ -138,4 +138,32 @@ public class ResourceLimitTest {
         assertTrue(evalResult.isSuccess(), "Evaluation should succeed");
         assertEquals("4950.0", evalResult.getResult().toString(), "Result should be the sum of 0 to 99");
     }
+
+    @Test
+    @DisplayName("Test that string length is limited")
+    public void testStringLengthLimit() {
+        // Create interpreter with default limits
+        Interpreter interpreter = new Interpreter();
+        
+        String largeStringGeneration = 
+            "let s = \"x\";\n" +
+            "let i = 0;\n" +
+            "while (i < 21) {\n" + // 2^20 = 1,048,576 chars which exceeds our 1M limit
+            "  s = s + s;\n" +     // Double string length each iteration
+            "  i = i + 1;\n" +
+            "}\n" +
+            "s;";
+        
+        // Parse should succeed
+        Interpreter.ParseResult parseResult = interpreter.parse(largeStringGeneration);
+        assertTrue(parseResult.isSuccess(), "Parsing should succeed");
+        
+        // Evaluation should fail with memory limit exceeded
+        Interpreter.EvaluationResult evalResult = interpreter.evaluate();
+        assertFalse(evalResult.isSuccess(), "Evaluation should fail");
+        // Either variable count or custom message about string length
+        assertTrue(evalResult.getErrors().get(0).getMessage().contains("Maximum variable count exceeded") || 
+                  evalResult.getErrors().get(0).getMessage().contains("string"), 
+                  "Should report memory limit: " + evalResult.getErrors().get(0).getMessage());
+    }
 } 

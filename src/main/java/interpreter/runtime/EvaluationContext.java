@@ -68,6 +68,14 @@ public class EvaluationContext {
         resourceUsage.incrementVariableCount();
         checkVariableCount(null);
         
+        // Check for oversized string values that could exhaust memory
+        if (value instanceof String && ((String) value).length() > resourceQuota.getMaxStringLength()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.VARIABLE_COUNT,
+                0, 0
+            );
+        }
+        
         values.put(name, value);
         return value;
     }
@@ -187,15 +195,15 @@ public class EvaluationContext {
     
     // Helper methods to check resource limits
     
-//    private void checkEvaluationDepth(Node.Position position) throws ResourceExhaustionError { // FIXME
-//        if (resourceUsage.getEvaluationDepth() > resourceQuota.getMaxEvaluationDepth()) {
-//            throw new ResourceExhaustionError(
-//                ResourceLimitType.EVALUATION_DEPTH,
-//                position != null ? position.getLine() : 0,
-//                position != null ? position.getColumn() : 0
-//            );
-//        }
-//    }
+    private void checkEvaluationDepth(Node.Position position) throws ResourceExhaustionError {
+        if (resourceUsage.getEvaluationDepth() > resourceQuota.getMaxEvaluationDepth()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.EVALUATION_DEPTH,
+                position != null ? position.getLine() : 0,
+                position != null ? position.getColumn() : 0
+            );
+        }
+    }
     
     private void checkLoopIterations(Node.Position position) throws ResourceExhaustionError {
         if (resourceUsage.getLoopIterations() > resourceQuota.getMaxLoopIterations()) {

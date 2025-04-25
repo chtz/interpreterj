@@ -39,7 +39,7 @@ public class InfixExpression extends Node {
         Object leftValue = left.evaluate(context);
         Object rightValue = right.evaluate(context);
         
-        return Evaluator.applyInfixOperator(leftValue, operator, rightValue);
+        return Evaluator.applyInfixOperator(leftValue, operator, rightValue, context.getResourceQuota());
     }
     
     @Override

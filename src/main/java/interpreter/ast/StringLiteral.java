@@ -20,6 +20,9 @@ public class StringLiteral extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Track this evaluation step
+        trackEvaluationStep(context);
+        
         return value;
     }
     

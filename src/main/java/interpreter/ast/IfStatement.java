@@ -33,6 +33,9 @@ public class IfStatement extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Track this evaluation step to prevent CPU exhaustion
+        trackEvaluationStep(context);
+        
         Object conditionResult = condition.evaluate(context);
         
         if (Evaluator.isTruthy(conditionResult)) {

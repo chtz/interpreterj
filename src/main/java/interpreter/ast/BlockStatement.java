@@ -36,6 +36,9 @@ public class BlockStatement extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Track this evaluation step to prevent CPU exhaustion
+        trackEvaluationStep(context);
+        
         // Create a new scope for this block
         EvaluationContext blockContext = context.extend();
         Object result = null;

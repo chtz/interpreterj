@@ -10,12 +10,13 @@ package interpreter.runtime;
  *   <li>Max loop iterations - prevents infinite loops</li>
  *   <li>Max variable count - prevents memory exhaustion</li>
  *   <li>Max evaluation steps - provides a CPU usage proxy</li>
+ *   <li>Max string length - prevents memory exhaustion from huge strings</li>
  * </ul>
  * 
  * <p>Example usage:</p>
  * <pre>
  * // Create a custom quota with restrictive limits
- * ResourceQuota quota = new ResourceQuota(50, 1000, 100, 10000);
+ * ResourceQuota quota = new ResourceQuota(50, 1000, 100, 10000, 100000);
  * 
  * // Create an interpreter with this quota
  * Interpreter interpreter = new Interpreter(quota);
@@ -27,12 +28,14 @@ public class ResourceQuota {
     private static final int DEFAULT_MAX_LOOP_ITERATIONS = 10000;
     private static final int DEFAULT_MAX_VARIABLE_COUNT = 1000;
     private static final int DEFAULT_MAX_EVALUATION_STEPS = 100000;
+    private static final int DEFAULT_MAX_STRING_LENGTH = 1000000;
     
     // Configurable limits
     private final int maxEvaluationDepth;     // Limits recursion depth
     private final int maxLoopIterations;      // Limits iterations in loops
     private final int maxVariableCount;       // Limits number of variables
     private final int maxEvaluationSteps;     // Limits total evaluation steps
+    private final int maxStringLength;        // Limits string length to prevent memory exhaustion
     
     /**
      * Creates a ResourceQuota with default limits.
@@ -43,11 +46,13 @@ public class ResourceQuota {
      *   <li>Max loop iterations: 10,000</li>
      *   <li>Max variable count: 1,000</li>
      *   <li>Max evaluation steps: 100,000</li>
+     *   <li>Max string length: 1,000,000</li>
      * </ul>
      */
     public ResourceQuota() {
         this(DEFAULT_MAX_EVALUATION_DEPTH, DEFAULT_MAX_LOOP_ITERATIONS, 
-             DEFAULT_MAX_VARIABLE_COUNT, DEFAULT_MAX_EVALUATION_STEPS);
+             DEFAULT_MAX_VARIABLE_COUNT, DEFAULT_MAX_EVALUATION_STEPS,
+             DEFAULT_MAX_STRING_LENGTH);
     }
     
     /**
@@ -57,13 +62,30 @@ public class ResourceQuota {
      * @param maxLoopIterations Maximum iterations across all loops
      * @param maxVariableCount Maximum number of variables that can be created
      * @param maxEvaluationSteps Maximum total evaluation steps (CPU proxy)
+     * @param maxStringLength Maximum string length to prevent memory exhaustion
      */
     public ResourceQuota(int maxEvaluationDepth, int maxLoopIterations, 
-                         int maxVariableCount, int maxEvaluationSteps) {
+                         int maxVariableCount, int maxEvaluationSteps,
+                         int maxStringLength) {
         this.maxEvaluationDepth = maxEvaluationDepth;
         this.maxLoopIterations = maxLoopIterations;
         this.maxVariableCount = maxVariableCount;
         this.maxEvaluationSteps = maxEvaluationSteps;
+        this.maxStringLength = maxStringLength;
+    }
+    
+    /**
+     * Creates a ResourceQuota with custom limits, using the default string length limit
+     * 
+     * @param maxEvaluationDepth Maximum recursion/function call depth
+     * @param maxLoopIterations Maximum iterations across all loops
+     * @param maxVariableCount Maximum number of variables that can be created
+     * @param maxEvaluationSteps Maximum total evaluation steps (CPU proxy)
+     */
+    public ResourceQuota(int maxEvaluationDepth, int maxLoopIterations, 
+                         int maxVariableCount, int maxEvaluationSteps) {
+        this(maxEvaluationDepth, maxLoopIterations, maxVariableCount, 
+             maxEvaluationSteps, DEFAULT_MAX_STRING_LENGTH);
     }
     
     /**
@@ -92,5 +114,12 @@ public class ResourceQuota {
      */
     public int getMaxEvaluationSteps() {
         return maxEvaluationSteps;
+    }
+    
+    /**
+     * @return the maximum allowed string length
+     */
+    public int getMaxStringLength() {
+        return maxStringLength;
     }
 } 

@@ -319,7 +319,7 @@ InterpreterJ includes a configurable throttling system to prevent malicious scri
 
 - Infinite recursion (stack overflow)
 - Infinite loops
-- Memory exhaustion through excessive variable creation
+- Memory exhaustion through excessive variable creation or large strings
 - CPU exhaustion through complex expressions or long-running scripts
 
 ### Quota Limits
@@ -330,6 +330,11 @@ The following resource limits can be configured:
 2. **Max Loop Iterations**: Limits the total number of loop iterations to prevent infinite loops
 3. **Max Variable Count**: Limits the number of variables that can be created to prevent memory exhaustion
 4. **Max Evaluation Steps**: A proxy for CPU usage, limiting the total number of evaluation operations
+
+Additionally, the interpreter protects against:
+
+- **String Length Limits**: Prevents creation of excessively large strings (>1 million characters)
+- **Oversized Object Detection**: Prevents storing oversized objects in variables
 
 ### Using Resource Quotas
 
