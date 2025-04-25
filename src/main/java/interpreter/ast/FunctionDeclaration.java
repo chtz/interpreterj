@@ -38,23 +38,25 @@ public class FunctionDeclaration extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Track this evaluation step
+        trackEvaluationStep(context);
+        
         // Create a function wrapper that will execute the function body
         CallableFunction function = (List<Object> args) -> {
-            // Create a new environment with the parent as the current environment
-        	EvaluationContext functionContext = context.extend();
-            
-            // Bind arguments to parameters
-            for (int i = 0; i < parameters.size(); i++) {
-                String param = parameters.get(i);
-                Object arg = i < args.size() ? args.get(i) : null;
-                
-                functionContext.define(param, arg);
-            }
-            
-            // Execute the function body
-            Object result;
             try {
-                result = body.evaluate(functionContext);
+                // Create a new environment with the parent as the current environment
+                EvaluationContext functionContext = context.extend();
+                
+                // Bind arguments to parameters
+                for (int i = 0; i < parameters.size(); i++) {
+                    String param = parameters.get(i);
+                    Object arg = i < args.size() ? args.get(i) : null;
+                    
+                    functionContext.define(param, arg);
+                }
+                
+                // Execute the function body
+                Object result = body.evaluate(functionContext);
                 
                 // Unwrap ReturnValue if present
                 if (result instanceof ReturnValue) {
@@ -62,9 +64,9 @@ public class FunctionDeclaration extends Node {
                 }
                 
                 return result;
-                
             } catch (RuntimeError e) {
-                throw new RuntimeException(e.getMessage(), e);
+                // Preserve the original RuntimeError as the cause to allow for proper unwrapping
+                throw new RuntimeException("Error in function '" + name + "': " + e.getMessage(), e);
             }
         };
         

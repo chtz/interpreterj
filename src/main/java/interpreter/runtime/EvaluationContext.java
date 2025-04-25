@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import interpreter.ast.Node;
+import interpreter.runtime.ResourceExhaustionError.ResourceLimitType;
 
 /**
  * Environment to store variables and functions in the current scope
@@ -13,27 +14,60 @@ public class EvaluationContext {
     private final Map<String, Object> values;
     private final Map<String, CallableFunction> functions;
     
+    // Resource tracking fields - shared across all context instances
+    private final ResourceUsage resourceUsage;
+    private final ResourceQuota resourceQuota;
+    
     public EvaluationContext() {
-        this(null);
+        this(null, new ResourceQuota(), new ResourceUsage());
     }
     
     public EvaluationContext(EvaluationContext parent) {
+        this(parent, 
+            parent != null ? parent.getResourceQuota() : new ResourceQuota(), 
+            parent != null ? parent.getResourceUsage() : new ResourceUsage());
+    }
+    
+    public EvaluationContext(ResourceQuota customQuota) {
+        this(null, customQuota, new ResourceUsage());
+    }
+    
+    private EvaluationContext(EvaluationContext parent, ResourceQuota resourceQuota, ResourceUsage resourceUsage) {
         this.parent = parent;
         this.values = new HashMap<>();
         this.functions = new HashMap<>();
+        this.resourceQuota = resourceQuota;
+        this.resourceUsage = resourceUsage;
+        
+        // Track context depth for recursion protection
+        if (parent != null) {
+            this.resourceUsage.incrementEvaluationDepth();
+        }
     }
     
     /**
      * Create a new nested scope
      */
-    public EvaluationContext extend() {
-        return new EvaluationContext(this);
+    public EvaluationContext extend() throws RuntimeError {
+        // Check depth limit before creating a new context
+        if (resourceUsage.getEvaluationDepth() + 1 > resourceQuota.getMaxEvaluationDepth()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.EVALUATION_DEPTH,
+                0, 0
+            );
+        }
+        
+        return new EvaluationContext(this, this.resourceQuota, this.resourceUsage);
     }
     
     /**
      * Define a variable in the current scope
      */
-    public Object define(String name, Object value) {
+    public Object define(String name, Object value) throws RuntimeError {
+        // Track variable count for memory protection
+        resourceUsage.incrementVariableCount();
+        checkVariableCount(null);
+        
         values.put(name, value);
         return value;
     }
@@ -42,6 +76,10 @@ public class EvaluationContext {
      * Get a variable from the current or parent scopes
      */
     public Object get(String name, Node.Position position) throws RuntimeError {
+        // Increment evaluation steps
+        resourceUsage.incrementEvaluationSteps();
+        checkEvaluationSteps(position);
+        
         // Check current scope
         if (values.containsKey(name)) {
             return values.get(name);
@@ -69,6 +107,10 @@ public class EvaluationContext {
      * Assign a value to a variable in the current or parent scopes
      */
     public Object assign(String name, Object value, Node.Position position) throws RuntimeError {
+        // Increment evaluation steps
+        resourceUsage.incrementEvaluationSteps();
+        checkEvaluationSteps(position);
+        
         // Check current scope
         if (values.containsKey(name)) {
             values.put(name, value);
@@ -94,5 +136,140 @@ public class EvaluationContext {
     public CallableFunction registerFunction(String name, CallableFunction function) {
         functions.put(name, function);
         return function;
+    }
+    
+    /**
+     * @return The resource quota configured for this context
+     */
+    public ResourceQuota getResourceQuota() {
+        return resourceQuota;
+    }
+    
+    /**
+     * @return The current resource usage tracking object
+     */
+    public ResourceUsage getResourceUsage() {
+        return resourceUsage;
+    }
+    
+    /**
+     * Get the current evaluation depth
+     */
+    public int getEvaluationDepth() {
+        return resourceUsage.getEvaluationDepth();
+    }
+    
+    /**
+     * Increment and check loop iterations counter
+     * 
+     * @param position Source position for error reporting
+     * @throws RuntimeError if loop iterations limit is exceeded
+     */
+    public void trackLoopIteration(Node.Position position) throws RuntimeError {
+        resourceUsage.incrementLoopIterations();
+        checkLoopIterations(position);
+        
+        // Also track general evaluation steps
+        resourceUsage.incrementEvaluationSteps();
+        checkEvaluationSteps(position);
+    }
+    
+    /**
+     * Track evaluation step and check against limit
+     * 
+     * @param position Source position for error reporting
+     * @throws RuntimeError if evaluation steps limit is exceeded
+     */
+    public void trackEvaluationStep(Node.Position position) throws RuntimeError {
+        resourceUsage.incrementEvaluationSteps();
+        checkEvaluationSteps(position);
+    }
+    
+    // Helper methods to check resource limits
+    
+//    private void checkEvaluationDepth(Node.Position position) throws ResourceExhaustionError { // FIXME
+//        if (resourceUsage.getEvaluationDepth() > resourceQuota.getMaxEvaluationDepth()) {
+//            throw new ResourceExhaustionError(
+//                ResourceLimitType.EVALUATION_DEPTH,
+//                position != null ? position.getLine() : 0,
+//                position != null ? position.getColumn() : 0
+//            );
+//        }
+//    }
+    
+    private void checkLoopIterations(Node.Position position) throws ResourceExhaustionError {
+        if (resourceUsage.getLoopIterations() > resourceQuota.getMaxLoopIterations()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.LOOP_ITERATIONS,
+                position != null ? position.getLine() : 0,
+                position != null ? position.getColumn() : 0
+            );
+        }
+    }
+    
+    private void checkVariableCount(Node.Position position) throws ResourceExhaustionError {
+        if (resourceUsage.getVariableCount() > resourceQuota.getMaxVariableCount()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.VARIABLE_COUNT,
+                position != null ? position.getLine() : 0,
+                position != null ? position.getColumn() : 0
+            );
+        }
+    }
+    
+    private void checkEvaluationSteps(Node.Position position) throws ResourceExhaustionError {
+        if (resourceUsage.getEvaluationSteps() > resourceQuota.getMaxEvaluationSteps()) {
+            throw new ResourceExhaustionError(
+                ResourceLimitType.EVALUATION_STEPS,
+                position != null ? position.getLine() : 0,
+                position != null ? position.getColumn() : 0
+            );
+        }
+    }
+    
+    /**
+     * Helper class to track resource usage statistics
+     */
+    public static class ResourceUsage {
+        private int evaluationDepth = 0;
+        private int loopIterations = 0;
+        private int variableCount = 0;
+        private int evaluationSteps = 0;
+        
+        public void incrementEvaluationDepth() {
+            evaluationDepth++;
+        }
+        
+        public void incrementLoopIterations() {
+            loopIterations++;
+        }
+        
+        public void incrementVariableCount() {
+            variableCount++;
+        }
+        
+        public void incrementEvaluationSteps() {
+            evaluationSteps++;
+        }
+        
+        public int getEvaluationDepth() {
+            return evaluationDepth;
+        }
+        
+        public int getLoopIterations() {
+            return loopIterations;
+        }
+        
+        public int getVariableCount() {
+            return variableCount;
+        }
+        
+        public int getEvaluationSteps() {
+            return evaluationSteps;
+        }
+        
+        public void decrementEvaluationDepth() {
+            evaluationDepth--;
+        }
     }
 } 

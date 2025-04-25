@@ -54,6 +54,16 @@ public abstract class Node {
     }
     
     /**
+     * Track an evaluation step to prevent runaway execution
+     * 
+     * @param context The evaluation context
+     * @throws RuntimeError if step limits are exceeded
+     */
+    protected void trackEvaluationStep(EvaluationContext context) throws RuntimeError {
+        context.trackEvaluationStep(position);
+    }
+    
+    /**
      * Evaluate this node in the given context
      * @param context The evaluation context
      * @return The result of evaluating this node

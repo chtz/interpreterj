@@ -31,6 +31,9 @@ public class CallExpression extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Track this evaluation step to prevent CPU exhaustion and recursion depth
+        trackEvaluationStep(context);
+        
         // Evaluate the function (callee)
         Object function = callee.evaluate(context);
         
@@ -50,7 +53,19 @@ public class CallExpression extends Node {
         
         // Call the function
         if (function instanceof CallableFunction) {
-            return ((CallableFunction) function).apply(args);
+            try {
+                return ((CallableFunction) function).apply(args);
+            } catch (RuntimeException e) {
+                // Unwrap RuntimeException if it was originally a RuntimeError
+                if (e.getCause() instanceof RuntimeError) {
+                    throw (RuntimeError) e.getCause();
+                }
+                throw new RuntimeError(
+                        "Error in function call: " + e.getMessage(),
+                        position.getLine(),
+                        position.getColumn()
+                );
+            }
         } else {
             throw new RuntimeError(
                     "Not a function: " + function,
@@ -62,7 +77,7 @@ public class CallExpression extends Node {
     
     @Override
     public String toJson() {
-        String argsJson = arguments.stream()
+        String argumentsJson = arguments.stream()
                 .map(Node::toJson)
                 .collect(Collectors.joining(", "));
         
@@ -71,7 +86,7 @@ public class CallExpression extends Node {
                 "\"callee\": %s, \"arguments\": [%s] }",
                 position,
                 callee != null ? callee.toJson() : "null",
-                argsJson
+                argumentsJson
         );
     }
 } 

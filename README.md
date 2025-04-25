@@ -312,3 +312,92 @@ InterpreterJ includes:
    - Logical: `&&`, `||`, `!`
 7. **Comments**:
    - Single
+
+## Resource Quotas
+
+InterpreterJ includes a configurable throttling system to prevent malicious scripts from consuming excessive resources. This helps protect against common attacks like:
+
+- Infinite recursion (stack overflow)
+- Infinite loops
+- Memory exhaustion through excessive variable creation
+- CPU exhaustion through complex expressions or long-running scripts
+
+### Quota Limits
+
+The following resource limits can be configured:
+
+1. **Max Evaluation Depth**: Limits recursion and function call nesting to prevent stack overflows
+2. **Max Loop Iterations**: Limits the total number of loop iterations to prevent infinite loops
+3. **Max Variable Count**: Limits the number of variables that can be created to prevent memory exhaustion
+4. **Max Evaluation Steps**: A proxy for CPU usage, limiting the total number of evaluation operations
+
+### Using Resource Quotas
+
+```java
+// Create a custom resource quota with your own limits
+ResourceQuota quota = new ResourceQuota(
+    500,    // maxEvaluationDepth
+    10000,  // maxLoopIterations
+    1000,   // maxVariableCount
+    100000  // maxEvaluationSteps
+);
+
+// Create an interpreter with the custom quota
+Interpreter interpreter = new Interpreter(quota);
+
+// Parse and evaluate code as usual
+Interpreter.ParseResult parseResult = interpreter.parse("your script here");
+Interpreter.EvaluationResult evalResult = interpreter.evaluate();
+
+// Check for resource exhaustion errors
+if (!evalResult.isSuccess()) {
+    System.out.println("Error: " + evalResult.getErrors().get(0).getMessage());
+}
+```
+
+If a script exceeds any of the configured limits, a `ResourceExhaustionError` will be thrown and caught by the interpreter, resulting in a failed evaluation.
+
+### Default Limits
+
+By default, InterpreterJ uses conservative limit values that allow legitimate scripts to run successfully while still providing protection:
+
+- Max Evaluation Depth: 500 (nested function calls/recursion depth)
+- Max Loop Iterations: 10,000
+- Max Variable Count: 1,000
+- Max Evaluation Steps: 100,000
+
+These values can be adjusted based on your specific needs and security requirements.
+
+## Example Usage
+
+```java
+import interpreter.main.Interpreter;
+
+public class Main {
+    public static void main(String[] args) {
+        Interpreter interpreter = new Interpreter();
+        
+        String script = 
+            "let sum = 0;\n" +
+            "for (let i = 0; i < 100; i = i + 1) {\n" +
+            "  sum = sum + i;\n" +
+            "}\n" +
+            "echo(\"Sum: \" + sum);";
+        
+        Interpreter.ParseResult parseResult = interpreter.parse(script);
+        
+        if (parseResult.isSuccess()) {
+            Interpreter.EvaluationResult evalResult = interpreter.evaluate();
+            
+            if (evalResult.isSuccess()) {
+                System.out.println("Result: " + evalResult.getResult());
+            } else {
+                System.out.println("Evaluation error: " + 
+                    Interpreter.formatErrors(evalResult.getErrors()));
+            }
+        } else {
+            System.out.println("Parse error: " + 
+                Interpreter.formatErrors(parseResult.getErrors()));
+        }
+    }
+}

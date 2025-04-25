@@ -33,6 +33,9 @@ public class InfixExpression extends Node {
     
     @Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
+        // Track this evaluation step to prevent CPU exhaustion
+        trackEvaluationStep(context);
+        
         Object leftValue = left.evaluate(context);
         Object rightValue = right.evaluate(context);
         

@@ -13,6 +13,8 @@ import interpreter.ast.Program;
 import interpreter.lexer.Lexer;
 import interpreter.parser.Parser;
 import interpreter.runtime.EvaluationContext;
+import interpreter.runtime.ResourceExhaustionError;
+import interpreter.runtime.ResourceQuota;
 import interpreter.runtime.RuntimeError;
 
 /**
@@ -21,7 +23,8 @@ import interpreter.runtime.RuntimeError;
  */
 public class Interpreter {
     private Program ast;
-    private Consumer<EvaluationContext>[] libraryFunctionInitializers; 
+    private Consumer<EvaluationContext>[] libraryFunctionInitializers;
+    private ResourceQuota resourceQuota;
     
 	/**
      * Error class to represent parser or runtime errors
@@ -114,13 +117,27 @@ public class Interpreter {
      */
     @SuppressWarnings("unchecked")
 	public Interpreter() {
-    	this(new DefaultLibraryFunctionsInitializer(), new StdIOLibraryFunctionsInitializer());
+    	this(new ResourceQuota(), new DefaultLibraryFunctionsInitializer(), new StdIOLibraryFunctionsInitializer());
+    }
+    
+    /**
+     * Creates a new Interpreter instance with custom resource quotas
+     */
+    @SuppressWarnings("unchecked")
+    public Interpreter(ResourceQuota resourceQuota) {
+        this(resourceQuota, new DefaultLibraryFunctionsInitializer(), new StdIOLibraryFunctionsInitializer());
     }
     
     @SuppressWarnings("unchecked")
 	public Interpreter(Consumer<EvaluationContext>... libraryFunctionInitializers) {
+    	this(new ResourceQuota(), libraryFunctionInitializers);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Interpreter(ResourceQuota resourceQuota, Consumer<EvaluationContext>... libraryFunctionInitializers) {
     	this.ast = null;
     	this.libraryFunctionInitializers = libraryFunctionInitializers;
+        this.resourceQuota = resourceQuota;
     }
     
     /**
@@ -166,7 +183,7 @@ public class Interpreter {
     	List<Error> errors = new ArrayList<>();
         
         try {
-        	EvaluationContext context = new EvaluationContext();
+        	EvaluationContext context = new EvaluationContext(resourceQuota);
             
             // Re-register built-in functions
             registerBuiltInFunctions(context); 
@@ -181,6 +198,11 @@ public class Interpreter {
             Object result = this.ast.evaluate(context);
             
             return new EvaluationResult(true, result, new ArrayList<>());
+        } catch (ResourceExhaustionError e) {
+            // Handle resource exhaustion errors
+            errors.add(new Error(e.getMessage(), e.getLine(), e.getColumn()));
+            
+            return new EvaluationResult(false, null, errors);
         } catch (RuntimeError e) {
             // Handle runtime errors
             errors.add(new Error(e.getMessage(), e.getLine(), e.getColumn()));
@@ -261,4 +283,18 @@ public class Interpreter {
 	        });
 		}
 	}
+    
+    /**
+     * Get the current resource quota
+     */
+    public ResourceQuota getResourceQuota() {
+        return resourceQuota;
+    }
+    
+    /**
+     * Set a new resource quota
+     */
+    public void setResourceQuota(ResourceQuota resourceQuota) {
+        this.resourceQuota = resourceQuota;
+    }
 }

@@ -31,6 +31,9 @@ public class WhileStatement extends Node {
         Object result = null;
         
         while (Evaluator.isTruthy(condition.evaluate(context))) {
+            // Track loop iterations to prevent infinite loops
+            context.trackLoopIteration(position);
+            
             result = body.evaluate(context);
             
             // Handle return statements inside the loop
