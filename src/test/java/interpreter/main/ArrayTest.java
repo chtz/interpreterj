@@ -110,7 +110,7 @@ public class ArrayTest {
         Interpreter interpreter = new Interpreter();
         Interpreter.ParseResult parseResult = interpreter.parse(
             "let arr = [10, 20, 30, 40, 50];\n" +
-            "arr;\n"  // Just return the array itself for debugging
+            "arr;\n"  // Return the array to verify its internal representation
         );
         
         assertTrue(parseResult.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult.getErrors()));
@@ -125,6 +125,56 @@ public class ArrayTest {
         assertEquals(5, list.size(), "Array should have 5 elements");
         assertEquals(10.0, list.get(0), "First element should be 10.0");
         assertEquals(50.0, list.get(4), "Last element should be 50.0");
+    }
+    
+    @Test
+    @DisplayName("Test array element access")
+    public void testArrayElementAccess() {
+        Interpreter interpreter = new Interpreter();
+        
+        // Test accessing an element through a function argument
+        Interpreter.ParseResult parseResult1 = interpreter.parse(
+            "let arr = [10, 20, 30, 40, 50];\n" +
+            "echo(arr[4]);"  // Use echo function to get element
+        );
+        
+        assertTrue(parseResult1.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult1.getErrors()));
+        
+        Interpreter.EvaluationResult evalResult1 = interpreter.evaluate();
+        assertTrue(evalResult1.isSuccess(), "Evaluation error: " + Interpreter.formatErrors(evalResult1.getErrors()));
+        
+        Object result1 = evalResult1.getResult();
+        assertEquals(50.0, result1, "Element at index 4 should be 50.0");
+        
+        // Test direct array element access as a statement
+        Interpreter interpreter2 = new Interpreter();
+        Interpreter.ParseResult parseResult2 = interpreter2.parse(
+            "let arr = [10, 20, 30, 40, 50];\n" +
+            "arr[4];"  // Direct array indexing as the last statement
+        );
+        
+        assertTrue(parseResult2.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult2.getErrors()));
+        
+        Interpreter.EvaluationResult evalResult2 = interpreter2.evaluate();
+        assertTrue(evalResult2.isSuccess(), "Evaluation error: " + Interpreter.formatErrors(evalResult2.getErrors()));
+        
+        Object result2 = evalResult2.getResult();
+        assertEquals(50.0, result2, "Element at index 4 should be 50.0");
+        
+        // Test array access in complex expressions
+        Interpreter interpreter3 = new Interpreter();
+        Interpreter.ParseResult parseResult3 = interpreter3.parse(
+            "let arr = [10, 20, 30, 40, 50];\n" +
+            "arr[2] + arr[4];"  // Using array indexes in an expression
+        );
+        
+        assertTrue(parseResult3.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult3.getErrors()));
+        
+        Interpreter.EvaluationResult evalResult3 = interpreter3.evaluate();
+        assertTrue(evalResult3.isSuccess(), "Evaluation error: " + Interpreter.formatErrors(evalResult3.getErrors()));
+        
+        Object result3 = evalResult3.getResult();
+        assertEquals(80.0, result3, "Sum of elements should be 30.0 + 50.0 = 80.0");
     }
     
     @Test
@@ -279,41 +329,5 @@ public class ArrayTest {
         
         // Check last (7)
         assertEquals(7.0, resultList.get(4), "last should be 7.0");
-    }
-    
-    @Test
-    @DisplayName("Test direct array element access")
-    public void testDirectArrayElementAccess() {
-        Interpreter interpreter = new Interpreter();
-        Interpreter.ParseResult parseResult = interpreter.parse(
-            "let arr = [10, 20, 30, 40, 50];\n" +
-            "arr[4];"  
-        );
-        
-        assertTrue(parseResult.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult.getErrors()));
-        
-        Interpreter.EvaluationResult evalResult = interpreter.evaluate();
-        assertTrue(evalResult.isSuccess(), "Evaluation error: " + Interpreter.formatErrors(evalResult.getErrors()));
-        
-        Object result = evalResult.getResult();
-        assertEquals(50.0, result, "Element at index 4 should be 50.0");
-    }
-    
-    @Test
-    @DisplayName("Test array function with index")
-    public void testArrayFunctionWithIndex() {
-        Interpreter interpreter = new Interpreter();
-        Interpreter.ParseResult parseResult = interpreter.parse(
-            "let arr = [10, 20, 30, 40, 50];\n" +
-            "echo(arr[4]);"  // Use the built-in echo function
-        );
-        
-        assertTrue(parseResult.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult.getErrors()));
-        
-        Interpreter.EvaluationResult evalResult = interpreter.evaluate();
-        assertTrue(evalResult.isSuccess(), "Evaluation error: " + Interpreter.formatErrors(evalResult.getErrors()));
-        
-        Object result = evalResult.getResult();
-        assertEquals(50.0, result, "Element at index 4 should be 50.0");
     }
 } 

@@ -27,7 +27,8 @@ public class InterpreterTest {
 		
 		CallableFunction quadruple = (CallableFunction) interpreter.evaluate().getResult();
 		
-		assertEquals("88.0", quadruple.apply(List.of(22)).toString()); // FIXME why .0?
+		// All numbers in this interpreter are represented as double values, hence the .0 suffix
+		assertEquals("88.0", quadruple.apply(List.of(22)).toString());
 		assertEquals("44.0", quadruple.apply(List.of(11)).toString()); 
 	}
 	
