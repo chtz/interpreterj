@@ -287,7 +287,7 @@ public class ArrayTest {
         Interpreter interpreter = new Interpreter();
         Interpreter.ParseResult parseResult = interpreter.parse(
             "let arr = [10, 20, 30, 40, 50];\n" +
-            "echo(arr[4]);"  // Use echo function to get element
+            "arr[4];"  
         );
         
         assertTrue(parseResult.isSuccess(), "Parse error: " + Interpreter.formatErrors(parseResult.getErrors()));

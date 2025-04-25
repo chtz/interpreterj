@@ -451,5 +451,4 @@ let popped = pop(numbers); // Remove from end: popped = 4, numbers = [1, 20, 3]
 delete(numbers, 0);        // Remove at index: numbers = [20, 3]
 ```
 
-
 Arrays are mutable, so changes to an array (through index assignment, push, pop, or delete) affect the original array rather than creating a new one. Only array concatenation with the + operator creates a new array.

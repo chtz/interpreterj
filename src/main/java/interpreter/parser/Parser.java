@@ -227,7 +227,46 @@ public class Parser {
                 if (currentTokenIs(TokenType.IDENTIFIER)) {
                     Token lookAhead = peekToken;
                     if (lookAhead.getType() == TokenType.LBRACKET) {
-                        return parseIndexAssignmentStatement();
+                        // Remember the current position in the token stream
+                        int savedPosition = currentPosition;
+                        String identifier = currentToken.getLiteral();
+                        
+                        // Parse the index expression
+                        nextToken(); // Move past identifier to '['
+                        if (!currentTokenIs(TokenType.LBRACKET)) {
+                            // If not at '[', restore position and treat as regular expression
+                            currentPosition = savedPosition;
+                            peekToken = tokens.get(currentPosition - 1);
+                            currentToken = tokens.get(currentPosition - 2);
+                            return parseExpressionStatement();
+                        }
+                        
+                        nextToken(); // Move past '['
+                        Node index = parseExpression(Precedence.LOWEST);
+                        
+                        if (!expectPeek(TokenType.RBRACKET)) {
+                            // Error in syntax, restore position and try as expression
+                            currentPosition = savedPosition;
+                            peekToken = tokens.get(currentPosition - 1);
+                            currentToken = tokens.get(currentPosition - 2);
+                            return parseExpressionStatement();
+                        }
+                        
+                        // Check if the next token is '=' for assignment
+                        if (peekTokenIs(TokenType.ASSIGN)) {
+                            // It's an assignment, parse it as IndexAssignmentStatement
+                            // Reset position and process through parseIndexAssignmentStatement
+                            currentPosition = savedPosition;
+                            peekToken = tokens.get(currentPosition - 1);
+                            currentToken = tokens.get(currentPosition - 2);
+                            return parseIndexAssignmentStatement();
+                        } else {
+                            // It's just an index expression
+                            currentPosition = savedPosition;
+                            peekToken = tokens.get(currentPosition - 1);
+                            currentToken = tokens.get(currentPosition - 2);
+                            return parseExpressionStatement();
+                        }
                     }
                     // Check for assignment statements (identifier = expression)
                     else if (peekTokenIs(TokenType.ASSIGN)) {
