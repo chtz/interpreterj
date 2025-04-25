@@ -232,7 +232,7 @@ public class Parser {
                     if (lookAhead.getType() == TokenType.LBRACKET) {
                         // Remember the current position in the token stream
                         int savedPosition = currentPosition;
-                        String identifier = currentToken.getLiteral();
+//                        String identifier = currentToken.getLiteral(); // FIXME not used?
                         
                         // Parse the index expression
                         nextToken(); // Move past identifier to '['
@@ -245,7 +245,7 @@ public class Parser {
                         }
                         
                         nextToken(); // Move past '['
-                        Node index = parseExpression(Precedence.LOWEST);
+                        // Node index = parseExpression(Precedence.LOWEST); // FIXME not used?
                         
                         if (!expectPeek(TokenType.RBRACKET)) {
                             // Error in syntax, restore position and try as expression

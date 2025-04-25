@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -14,6 +13,7 @@ import java.util.function.Consumer;
 import interpreter.ast.Program;
 import interpreter.lexer.Lexer;
 import interpreter.parser.Parser;
+import interpreter.runtime.CallableFunction;
 import interpreter.runtime.EvaluationContext;
 import interpreter.runtime.ResourceExhaustionError;
 import interpreter.runtime.ResourceQuota;
@@ -121,7 +121,8 @@ public class Interpreter {
 	public Interpreter() {
     	this(new ResourceQuota(), new DefaultLibraryFunctionsInitializer(), 
              new StdIOLibraryFunctionsInitializer(), new MapLibraryFunctionsInitializer(),
-             new ArrayLibraryFunctionsInitializer());
+             new ArrayLibraryFunctionsInitializer(), new StringLibraryFunctionsInitializer(),
+             new RegexLibraryFunctionsInitializer(), new TypeLibraryFunctionsInitializer());
     }
     
     /**
@@ -131,7 +132,8 @@ public class Interpreter {
     public Interpreter(ResourceQuota resourceQuota) {
         this(resourceQuota, new DefaultLibraryFunctionsInitializer(), 
              new StdIOLibraryFunctionsInitializer(), new MapLibraryFunctionsInitializer(),
-             new ArrayLibraryFunctionsInitializer());
+             new ArrayLibraryFunctionsInitializer(), new StringLibraryFunctionsInitializer(),
+             new RegexLibraryFunctionsInitializer(), new TypeLibraryFunctionsInitializer());
     }
     
     @SuppressWarnings("unchecked")
@@ -442,6 +444,463 @@ public class Interpreter {
                 Map<Object, Object> map = (Map<Object, Object>) arg;
                 
                 return new ArrayList<>(map.values());
+            });
+        }
+    }
+    
+    /**
+     * Library initializer for string manipulation functions
+     */
+    public final static class StringLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
+        @Override
+        public void accept(EvaluationContext ec) {
+            // char(string, index) - Get character at specific index
+            ec.registerFunction("char", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("char() requires 2 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object indexArg = args.get(1);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to char() must be a string");
+                }
+                
+                if (!(indexArg instanceof Number)) {
+                    throw new RuntimeException("Second argument to char() must be a number");
+                }
+                
+                String str = (String) strArg;
+                int index = ((Number) indexArg).intValue();
+                
+                if (index < 0 || index >= str.length()) {
+                    throw new RuntimeException("String index out of bounds: " + index);
+                }
+                
+                return String.valueOf(str.charAt(index));
+            });
+            
+            // ord(char) - Get ASCII/Unicode code point of character
+            ec.registerFunction("ord", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("ord() requires 1 argument");
+                }
+                
+                Object charArg = args.get(0);
+                
+                if (!(charArg instanceof String)) {
+                    throw new RuntimeException("Argument to ord() must be a string");
+                }
+                
+                String str = (String) charArg;
+                
+                if (str.length() != 1) {
+                    throw new RuntimeException("Argument to ord() must be a single character");
+                }
+                
+                return (double) str.charAt(0);
+            });
+            
+            // chr(code) - Convert code point to character
+            ec.registerFunction("chr", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("chr() requires 1 argument");
+                }
+                
+                Object codeArg = args.get(0);
+                
+                if (!(codeArg instanceof Number)) {
+                    throw new RuntimeException("Argument to chr() must be a number");
+                }
+                
+                int code = ((Number) codeArg).intValue();
+                
+                return String.valueOf((char) code);
+            });
+            
+            // substr(string, start, length) - Get substring
+            ec.registerFunction("substr", args -> {
+                if (args.size() < 3) {
+                    throw new RuntimeException("substr() requires 3 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object startArg = args.get(1);
+                Object lengthArg = args.get(2);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to substr() must be a string");
+                }
+                
+                if (!(startArg instanceof Number)) {
+                    throw new RuntimeException("Second argument to substr() must be a number");
+                }
+                
+                if (!(lengthArg instanceof Number)) {
+                    throw new RuntimeException("Third argument to substr() must be a number");
+                }
+                
+                String str = (String) strArg;
+                int start = ((Number) startArg).intValue();
+                int length = ((Number) lengthArg).intValue();
+                
+                if (start < 0) {
+                    throw new RuntimeException("Start index cannot be negative");
+                }
+                
+                if (length < 0) {
+                    throw new RuntimeException("Length cannot be negative");
+                }
+                
+                if (start >= str.length()) {
+                    return "";
+                }
+                
+                int end = Math.min(start + length, str.length());
+                
+                return str.substring(start, end);
+            });
+            
+            // startsWith(string, prefix) - Check if string starts with prefix
+            ec.registerFunction("startsWith", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("startsWith() requires 2 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object prefixArg = args.get(1);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to startsWith() must be a string");
+                }
+                
+                if (!(prefixArg instanceof String)) {
+                    throw new RuntimeException("Second argument to startsWith() must be a string");
+                }
+                
+                String str = (String) strArg;
+                String prefix = (String) prefixArg;
+                
+                return str.startsWith(prefix);
+            });
+            
+            // endsWith(string, suffix) - Check if string ends with suffix
+            ec.registerFunction("endsWith", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("endsWith() requires 2 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object suffixArg = args.get(1);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to endsWith() must be a string");
+                }
+                
+                if (!(suffixArg instanceof String)) {
+                    throw new RuntimeException("Second argument to endsWith() must be a string");
+                }
+                
+                String str = (String) strArg;
+                String suffix = (String) suffixArg;
+                
+                return str.endsWith(suffix);
+            });
+            
+            // trim(string) - Trim whitespace
+            ec.registerFunction("trim", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("trim() requires 1 argument");
+                }
+                
+                Object strArg = args.get(0);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("Argument to trim() must be a string");
+                }
+                
+                String str = (String) strArg;
+                
+                return str.trim();
+            });
+            
+            // join(array, delimiter) - Join array elements with delimiter
+            ec.registerFunction("join", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("join() requires 2 arguments");
+                }
+                
+                Object arrayArg = args.get(0);
+                Object delimiterArg = args.get(1);
+                
+                if (!(arrayArg instanceof List)) {
+                    throw new RuntimeException("First argument to join() must be an array");
+                }
+                
+                if (!(delimiterArg instanceof String)) {
+                    throw new RuntimeException("Second argument to join() must be a string");
+                }
+                
+                @SuppressWarnings("unchecked")
+                List<Object> array = (List<Object>) arrayArg;
+                String delimiter = (String) delimiterArg;
+                
+                StringBuilder result = new StringBuilder();
+                
+                for (int i = 0; i < array.size(); i++) {
+                    result.append(array.get(i));
+                    
+                    if (i < array.size() - 1) {
+                        result.append(delimiter);
+                    }
+                }
+                
+                return result.toString();
+            });
+        }
+    }
+    
+    /**
+     * Library initializer for regular expression functions
+     */
+    public final static class RegexLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
+        @Override
+        public void accept(EvaluationContext ec) {
+            // match(string, pattern) - Match pattern against string
+            ec.registerFunction("match", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("match() requires 2 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object patternArg = args.get(1);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to match() must be a string");
+                }
+                
+                if (!(patternArg instanceof String)) {
+                    throw new RuntimeException("Second argument to match() must be a string");
+                }
+                
+                try {
+                    String str = (String) strArg;
+                    String pattern = (String) patternArg;
+                    // Unescape backslashes in the pattern
+                    pattern = pattern.replace("\\\\", "\\");
+                    
+                    return str.matches(pattern);
+                } catch (java.util.regex.PatternSyntaxException e) {
+                    throw new RuntimeException("Invalid regex pattern: " + e.getMessage());
+                }
+            });
+            
+            // findAll(string, pattern) - Find all matches
+            ec.registerFunction("findAll", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("findAll() requires 2 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object patternArg = args.get(1);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to findAll() must be a string");
+                }
+                
+                if (!(patternArg instanceof String)) {
+                    throw new RuntimeException("Second argument to findAll() must be a string");
+                }
+                
+                try {
+                    String str = (String) strArg;
+                    String patternStr = (String) patternArg;
+                    // Unescape backslashes in the pattern
+                    patternStr = patternStr.replace("\\\\", "\\");
+                    
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(patternStr);
+                    java.util.regex.Matcher matcher = pattern.matcher(str);
+                    
+                    List<String> matches = new ArrayList<>();
+                    while (matcher.find()) {
+                        matches.add(matcher.group());
+                    }
+                    
+                    return matches;
+                } catch (java.util.regex.PatternSyntaxException e) {
+                    throw new RuntimeException("Invalid regex pattern: " + e.getMessage());
+                }
+            });
+            
+            // replace(string, pattern, replacement) - Replace pattern with replacement
+            ec.registerFunction("replace", args -> {
+                if (args.size() < 3) {
+                    throw new RuntimeException("replace() requires 3 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object patternArg = args.get(1);
+                Object replacementArg = args.get(2);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to replace() must be a string");
+                }
+                
+                if (!(patternArg instanceof String)) {
+                    throw new RuntimeException("Second argument to replace() must be a string");
+                }
+                
+                if (!(replacementArg instanceof String)) {
+                    throw new RuntimeException("Third argument to replace() must be a string");
+                }
+                
+                try {
+                    String str = (String) strArg;
+                    String patternStr = (String) patternArg;
+                    String replacement = (String) replacementArg;
+                    // Unescape backslashes in the pattern
+                    patternStr = patternStr.replace("\\\\", "\\");
+                    
+                    return str.replaceAll(patternStr, replacement);
+                } catch (java.util.regex.PatternSyntaxException e) {
+                    throw new RuntimeException("Invalid regex pattern: " + e.getMessage());
+                }
+            });
+            
+            // split(string, pattern) - Split string by pattern
+            ec.registerFunction("split", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("split() requires 2 arguments");
+                }
+                
+                Object strArg = args.get(0);
+                Object patternArg = args.get(1);
+                
+                if (!(strArg instanceof String)) {
+                    throw new RuntimeException("First argument to split() must be a string");
+                }
+                
+                if (!(patternArg instanceof String)) {
+                    throw new RuntimeException("Second argument to split() must be a string");
+                }
+                
+                try {
+                    String str = (String) strArg;
+                    String patternStr = (String) patternArg;
+                    // Unescape backslashes in the pattern
+                    patternStr = patternStr.replace("\\\\", "\\");
+                    
+                    // Use -1 as the limit to preserve trailing empty strings
+                    String[] parts = str.split(patternStr, -1);
+                    
+                    List<String> result = new ArrayList<>();
+                    for (String part : parts) {
+                        result.add(part);
+                    }
+                    
+                    return result;
+                } catch (java.util.regex.PatternSyntaxException e) {
+                    throw new RuntimeException("Invalid regex pattern: " + e.getMessage());
+                }
+            });
+        }
+    }
+    
+    /**
+     * Library initializer for type checking functions
+     */
+    public final static class TypeLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
+        @Override
+        public void accept(EvaluationContext ec) {
+            // typeof(value) - Get type of value
+            ec.registerFunction("typeof", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("typeof() requires 1 argument");
+                }
+                
+                Object arg = args.get(0);
+                
+                if (arg == null) {
+                    return "null";
+                } else if (arg instanceof Number) {
+                    return "number";
+                } else if (arg instanceof String) {
+                    return "string";
+                } else if (arg instanceof Boolean) {
+                    return "boolean";
+                } else if (arg instanceof List) {
+                    return "array";
+                } else if (arg instanceof Map) {
+                    return "map";
+                } else if (arg instanceof CallableFunction) {
+                    return "function";
+                } else {
+                    return "object";
+                }
+            });
+            
+            // isNumber(value) - Check if value is a number
+            ec.registerFunction("isNumber", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isNumber() requires 1 argument");
+                }
+                
+                return args.get(0) instanceof Number;
+            });
+            
+            // isString(value) - Check if value is a string
+            ec.registerFunction("isString", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isString() requires 1 argument");
+                }
+                
+                return args.get(0) instanceof String;
+            });
+            
+            // isBoolean(value) - Check if value is a boolean
+            ec.registerFunction("isBoolean", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isBoolean() requires 1 argument");
+                }
+                
+                return args.get(0) instanceof Boolean;
+            });
+            
+            // isArray(value) - Check if value is an array
+            ec.registerFunction("isArray", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isArray() requires 1 argument");
+                }
+                
+                return args.get(0) instanceof List;
+            });
+            
+            // isMap(value) - Check if value is a map
+            ec.registerFunction("isMap", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isMap() requires 1 argument");
+                }
+                
+                return args.get(0) instanceof Map;
+            });
+            
+            // isFunction(value) - Check if value is a function
+            ec.registerFunction("isFunction", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isFunction() requires 1 argument");
+                }
+                
+                return args.get(0) instanceof CallableFunction;
+            });
+            
+            // isNull(value) - Check if value is null
+            ec.registerFunction("isNull", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("isNull() requires 1 argument");
+                }
+                
+                return args.get(0) == null;
             });
         }
     }

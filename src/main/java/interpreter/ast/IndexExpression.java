@@ -27,7 +27,8 @@ public class IndexExpression extends Node {
         return index;
     }
     
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public Object evaluate(EvaluationContext context) throws RuntimeError {
         // Track this evaluation step to prevent CPU exhaustion
         trackEvaluationStep(context);

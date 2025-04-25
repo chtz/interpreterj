@@ -13,6 +13,9 @@ import interpreter.main.Interpreter.DefaultLibraryFunctionsInitializer;
 import interpreter.main.Interpreter.EvaluationResult;
 import interpreter.main.Interpreter.MapLibraryFunctionsInitializer;
 import interpreter.main.Interpreter.ParseResult;
+import interpreter.main.Interpreter.RegexLibraryFunctionsInitializer;
+import interpreter.main.Interpreter.StringLibraryFunctionsInitializer;
+import interpreter.main.Interpreter.TypeLibraryFunctionsInitializer;
 
 /**
  * <pre>
@@ -62,9 +65,14 @@ public class MarkdownInterpreter {
 					
 					final StringBuilder scriptOut = new StringBuilder();
 					Interpreter i = new Interpreter(ec -> {
-						new ArrayLibraryFunctionsInitializer().accept(ec); // FIXME better way to replace parts of std lib
-						new MapLibraryFunctionsInitializer().accept(ec);
-						new DefaultLibraryFunctionsInitializer().accept(ec);
+						// FIXME better way to replace parts of std lib
+						new DefaultLibraryFunctionsInitializer().accept(ec); 
+			            new MapLibraryFunctionsInitializer().accept(ec);
+			            new ArrayLibraryFunctionsInitializer().accept(ec);
+			            new StringLibraryFunctionsInitializer().accept(ec);
+			            new RegexLibraryFunctionsInitializer().accept(ec);
+			            new TypeLibraryFunctionsInitializer().accept(ec);
+						
 				    	ec.registerFunction("puts", args -> {
 				    		if (scriptOut.length() > 0) {
 				    			scriptOut.append("\n");

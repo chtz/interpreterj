@@ -471,6 +471,59 @@ puts(mapValues[0]);       // Output: 1.0 (order may vary)
 
 delete(map, "b");         // Remove entry with key "b"
 puts(len(map));           // Output: 2.0
+
+// String functions
+let str = "Hello World";
+puts(char(str, 0));       // Get character at index: H
+puts(substr(str, 0, 5));  // Get substring: Hello
+puts(trim("  text  "));   // Trim whitespace: text
+
+// Character conversion
+puts(ord("A"));           // Get ASCII code of a character: 65.0
+puts(chr(66));            // Convert ASCII code to character: B
+
+// String checks
+puts(startsWith(str, "Hello"));  // Check if string starts with prefix: true
+puts(endsWith(str, "World"));    // Check if string ends with suffix: true
+
+// Array to string conversion
+let items = ["apple", "banana", "cherry"];
+puts(join(items, ", "));  // Join array elements: apple, banana, cherry
+
+// Regular expression functions
+let text = "hello123world456";
+
+// Match entire string against pattern
+puts(match(text, "^[a-z]+\\d+[a-z]+\\d+$"));  // true
+
+// Find all matches
+let matches = findAll(text, "\\d+");  // Returns ["123", "456"]
+puts(matches[0]);  // 123
+
+// Replace patterns
+puts(replace(text, "\\d+", "X"));  // helloXworldX
+
+// Split string by delimiter
+let parts = split("a,b,c", ",");
+puts(len(parts));  // 3.0
+
+// Type checking functions
+puts(typeof(42));         // number
+puts(typeof("hello"));    // string
+puts(typeof(true));       // boolean
+puts(typeof(null));       // null
+puts(typeof([1, 2, 3]));  // array
+puts(typeof({"a": 1}));   // map
+puts(typeof(echo));       // function
+
+// Type checking predicates
+puts(isNumber(42));       // true
+puts(isString("hello"));  // true
+puts(isBoolean(true));    // true
+puts(isArray([1, 2, 3])); // true
+puts(isMap({"a": 1}));    // true
+puts(isFunction(echo));   // true
+puts(isNull(null));       // true
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -488,6 +541,32 @@ Hello, World!
 a
 1.0
 2.0
+H
+Hello
+text
+65.0
+B
+true
+true
+apple, banana, cherry
+true
+123
+helloXworldX
+3.0
+number
+string
+boolean
+null
+array
+map
+function
+true
+true
+true
+true
+true
+true
+true
 ```
 
 
@@ -797,7 +876,9 @@ puts(output);  // Output: Sorted array: 11, 12, 22, 25, 34, 64, 90
 
 <sup><sub>Script Output (generated)</sub></sup>
 ```output
-Sorted array: 11.0, 12.0, 22.0, 25.0, 34.0, 64.0, 90.0
+Parse error: Error at 15:7: Expected next token to be RBRACKET, got PLUS instead
+Error at 15:12: No prefix parse function for ASSIGN (=)
+
 ```
 
 
