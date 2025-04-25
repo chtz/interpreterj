@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import interpreter.runtime.ResourceQuota;
 
 /**
- * Tests for resource limits and throttling
+ * Tests that verify resource limits are enforced correctly
  */
 public class ResourceLimitTest {
 
@@ -165,5 +165,144 @@ public class ResourceLimitTest {
         assertTrue(evalResult.getErrors().get(0).getMessage().contains("Maximum variable count exceeded") || 
                   evalResult.getErrors().get(0).getMessage().contains("string"), 
                   "Should report memory limit: " + evalResult.getErrors().get(0).getMessage());
+    }
+
+    @Test
+    @DisplayName("Test max evaluation depth through recursive function")
+    public void testMaxEvaluationDepth() {
+        // Create a resource quota with a low evaluation depth limit
+        ResourceQuota quota = new ResourceQuota(10, 10000, 1000, 100000, 1000000);
+        
+        // Create a recursive function that exceeds the depth limit
+        String code = "def recursive(n) { if (n <= 0) { return 0; } else { return recursive(n - 1); } } recursive(20);";
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(code);
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum call stack depth exceeded"), 
+                   "Should report evaluation depth limit");
+    }
+    
+    @Test
+    @DisplayName("Test max loop iterations")
+    public void testMaxLoopIterations() {
+        // Create a resource quota with a low loop iterations limit
+        ResourceQuota quota = new ResourceQuota(500, 100, 1000, 100000, 1000000);
+        
+        String code = "let x = 0; while (x < 1000) { x = x + 1; }";
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(code);
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum loop iterations exceeded"), 
+                   "Should report loop iterations limit");
+    }
+    
+    @Test
+    @DisplayName("Test max variable count")
+    public void testMaxVariableCount() {
+        // Create a resource quota with a low variable count limit
+        ResourceQuota quota = new ResourceQuota(500, 10000, 10, 100000, 1000000);
+        
+        StringBuilder codeBuilder = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            codeBuilder.append("let var").append(i).append(" = ").append(i).append(";\n");
+        }
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(codeBuilder.toString());
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum variable count exceeded"), 
+                   "Should report variable count limit");
+    }
+    
+    @Test
+    @DisplayName("Test max evaluation steps")
+    public void testMaxEvaluationSteps() {
+        // Create a resource quota with a low evaluation steps limit
+        ResourceQuota quota = new ResourceQuota(500, 10000, 1000, 100, 1000000);
+        
+        // Create code with many evaluation steps
+        StringBuilder codeBuilder = new StringBuilder();
+        codeBuilder.append("let x = 0;\n");
+        for (int i = 0; i < 50; i++) {
+            codeBuilder.append("x = x + 1;\n");
+        }
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(codeBuilder.toString());
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum execution steps exceeded"), 
+                   "Should report evaluation steps limit");
+    }
+    
+    @Test
+    @DisplayName("Test max string length with string literals")
+    public void testMaxStringLengthLiteral() {
+        // Create a resource quota with a low string length limit
+        ResourceQuota quota = new ResourceQuota(500, 10000, 1000, 100000, 10);
+        
+        String code = "let x = \"This string is too long for our limit\";";
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(code);
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum variable count"), 
+                   "Should report variable count limit");
+    }
+    
+    @Test
+    @DisplayName("Test max string length with concatenation")
+    public void testMaxStringLengthConcatenation() {
+        // Create a resource quota with a low string length limit
+        ResourceQuota quota = new ResourceQuota(500, 10000, 1000, 100000, 10);
+        
+        String code = "let a = \"Hello\"; let b = \"World\"; let c = a + \" \" + b;";
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(code);
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum variable count"), 
+                   "Should report variable count limit");
+    }
+    
+    @Test
+    @DisplayName("Test mutual recursion depth limit")
+    public void testMutualRecursionDepthLimit() {
+        // Create a resource quota with a low evaluation depth limit
+        ResourceQuota quota = new ResourceQuota(15, 10000, 1000, 100000, 1000000);
+        
+        // Create two functions that call each other recursively
+        String code = 
+            "def even(n) { if (n == 0) { return true; } else { return odd(n - 1); } }\n" +
+            "def odd(n) { if (n == 0) { return false; } else { return even(n - 1); } }\n" +
+            "even(30);";  // This should exceed the depth limit
+        
+        Interpreter interpreter = new Interpreter(quota);
+        interpreter.parse(code);
+        
+        Interpreter.EvaluationResult result = interpreter.evaluate();
+        
+        assertFalse(result.isSuccess(), "Evaluation should fail");
+        assertTrue(result.getErrors().get(0).getMessage().contains("Maximum call stack depth"), 
+                   "Should report evaluation depth limit");
     }
 } 

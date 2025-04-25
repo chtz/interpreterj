@@ -18,21 +18,21 @@ public class EvaluationContext {
     private final ResourceUsage resourceUsage;
     private final ResourceQuota resourceQuota;
     
-    public EvaluationContext() {
+    public EvaluationContext() throws RuntimeError {
         this(null, new ResourceQuota(), new ResourceUsage());
     }
     
-    public EvaluationContext(EvaluationContext parent) {
+    public EvaluationContext(EvaluationContext parent) throws RuntimeError {
         this(parent, 
             parent != null ? parent.getResourceQuota() : new ResourceQuota(), 
             parent != null ? parent.getResourceUsage() : new ResourceUsage());
     }
     
-    public EvaluationContext(ResourceQuota customQuota) {
+    public EvaluationContext(ResourceQuota customQuota) throws RuntimeError {
         this(null, customQuota, new ResourceUsage());
     }
     
-    private EvaluationContext(EvaluationContext parent, ResourceQuota resourceQuota, ResourceUsage resourceUsage) {
+    private EvaluationContext(EvaluationContext parent, ResourceQuota resourceQuota, ResourceUsage resourceUsage) throws RuntimeError {
         this.parent = parent;
         this.values = new HashMap<>();
         this.functions = new HashMap<>();
@@ -42,6 +42,14 @@ public class EvaluationContext {
         // Track context depth for recursion protection
         if (parent != null) {
             this.resourceUsage.incrementEvaluationDepth();
+            // Check depth immediately after incrementing
+            try {
+                checkEvaluationDepth(null);
+            } catch (ResourceExhaustionError e) {
+                // If depth is exceeded during construction, decrement it back and rethrow
+                this.resourceUsage.decrementEvaluationDepth();
+                throw new RuntimeError(e.getMessage(), 0, 0);
+            }
         }
     }
     
@@ -191,6 +199,26 @@ public class EvaluationContext {
     public void trackEvaluationStep(Node.Position position) throws RuntimeError {
         resourceUsage.incrementEvaluationSteps();
         checkEvaluationSteps(position);
+    }
+    
+    /**
+     * Track evaluation depth and check against limit
+     * Used when entering a function call to prevent too deep recursion
+     * 
+     * @param position Source position for error reporting
+     * @throws RuntimeError if evaluation depth limit is exceeded
+     */
+    public void trackEvaluationDepth(Node.Position position) throws RuntimeError {
+        resourceUsage.incrementEvaluationDepth();
+        checkEvaluationDepth(position);
+    }
+    
+    /**
+     * Decrement the evaluation depth
+     * Used when exiting a function call
+     */
+    public void exitEvaluationDepth() {
+        resourceUsage.decrementEvaluationDepth();
     }
     
     // Helper methods to check resource limits
