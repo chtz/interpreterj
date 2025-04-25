@@ -256,6 +256,7 @@ public class Interpreter {
 	    	ec.registerFunction("puts", args -> {
 	    		out.write(args.get(0).toString());
 	    		out.write('\n');
+	    		out.flush();
 	    		return null;
 	        });
 		}
