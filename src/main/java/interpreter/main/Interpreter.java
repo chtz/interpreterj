@@ -117,7 +117,8 @@ public class Interpreter {
      */
     @SuppressWarnings("unchecked")
 	public Interpreter() {
-    	this(new ResourceQuota(), new DefaultLibraryFunctionsInitializer(), new StdIOLibraryFunctionsInitializer());
+    	this(new ResourceQuota(), new DefaultLibraryFunctionsInitializer(), 
+             new StdIOLibraryFunctionsInitializer(), new ArrayLibraryFunctionsInitializer());
     }
     
     /**
@@ -125,7 +126,8 @@ public class Interpreter {
      */
     @SuppressWarnings("unchecked")
     public Interpreter(ResourceQuota resourceQuota) {
-        this(resourceQuota, new DefaultLibraryFunctionsInitializer(), new StdIOLibraryFunctionsInitializer());
+        this(resourceQuota, new DefaultLibraryFunctionsInitializer(), 
+             new StdIOLibraryFunctionsInitializer(), new ArrayLibraryFunctionsInitializer());
     }
     
     @SuppressWarnings("unchecked")
@@ -283,6 +285,101 @@ public class Interpreter {
 	        });
 		}
 	}
+    
+    public final static class ArrayLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
+        @Override
+        public void accept(EvaluationContext ec) {
+            // len(array) - Get the length of an array
+            ec.registerFunction("len", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("len() requires 1 argument");
+                }
+                
+                Object arg = args.get(0);
+                if (arg instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> array = (List<Object>) arg;
+                    return (double) array.size();
+                }
+                
+                if (arg instanceof String) {
+                    return (double) ((String) arg).length();
+                }
+                
+                throw new RuntimeException("len() argument must be an array or string");
+            });
+            
+            // push(array, value) - Add a value to the end of an array
+            ec.registerFunction("push", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("push() requires 2 arguments");
+                }
+                
+                Object arrayArg = args.get(0);
+                Object value = args.get(1);
+                
+                if (!(arrayArg instanceof List)) {
+                    throw new RuntimeException("First argument to push() must be an array");
+                }
+                
+                @SuppressWarnings("unchecked")
+                List<Object> array = (List<Object>) arrayArg;
+                array.add(value);
+                
+                return value;
+            });
+            
+            // pop(array) - Remove and return the last element from an array
+            ec.registerFunction("pop", args -> {
+                if (args.isEmpty()) {
+                    throw new RuntimeException("pop() requires 1 argument");
+                }
+                
+                Object arrayArg = args.get(0);
+                
+                if (!(arrayArg instanceof List)) {
+                    throw new RuntimeException("Argument to pop() must be an array");
+                }
+                
+                @SuppressWarnings("unchecked")
+                List<Object> array = (List<Object>) arrayArg;
+                
+                if (array.isEmpty()) {
+                    throw new RuntimeException("Cannot pop from an empty array");
+                }
+                
+                return array.remove(array.size() - 1);
+            });
+            
+            // delete(array, index) - Remove an element at a specific index
+            ec.registerFunction("delete", args -> {
+                if (args.size() < 2) {
+                    throw new RuntimeException("delete() requires 2 arguments");
+                }
+                
+                Object arrayArg = args.get(0);
+                Object indexArg = args.get(1);
+                
+                if (!(arrayArg instanceof List)) {
+                    throw new RuntimeException("First argument to delete() must be an array");
+                }
+                
+                if (!(indexArg instanceof Number)) {
+                    throw new RuntimeException("Second argument to delete() must be a number");
+                }
+                
+                @SuppressWarnings("unchecked")
+                List<Object> array = (List<Object>) arrayArg;
+                int index = ((Number) indexArg).intValue();
+                
+                if (index < 0 || index >= array.size()) {
+                    throw new RuntimeException("Array index out of bounds: " + index);
+                }
+                
+                return array.remove(index);
+            });
+        }
+    }
     
     /**
      * Get the current resource quota

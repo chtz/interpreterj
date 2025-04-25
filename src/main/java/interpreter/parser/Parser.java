@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import interpreter.ast.ArrayLiteral;
 import interpreter.ast.AssignmentStatement;
 import interpreter.ast.BlockStatement;
 import interpreter.ast.BooleanLiteral;
@@ -15,6 +16,8 @@ import interpreter.ast.ExpressionStatement;
 import interpreter.ast.FunctionDeclaration;
 import interpreter.ast.Identifier;
 import interpreter.ast.IfStatement;
+import interpreter.ast.IndexAssignmentStatement;
+import interpreter.ast.IndexExpression;
 import interpreter.ast.InfixExpression;
 import interpreter.ast.Node;
 import interpreter.ast.NullLiteral;
@@ -127,6 +130,7 @@ public class Parser {
         this.precedences.put(TokenType.SLASH, Precedence.PRODUCT);
         this.precedences.put(TokenType.PERCENT, Precedence.PRODUCT);
         this.precedences.put(TokenType.LPAREN, Precedence.CALL);
+        this.precedences.put(TokenType.LBRACKET, Precedence.CALL);
         
         // Initialize with next two tokens
         nextToken();
@@ -142,6 +146,7 @@ public class Parser {
         registerPrefix(TokenType.LPAREN, this::parseGroupedExpression);
         registerPrefix(TokenType.MINUS, this::parsePrefixExpression);
         registerPrefix(TokenType.NOT, this::parsePrefixExpression);
+        registerPrefix(TokenType.LBRACKET, this::parseArrayLiteral);
         
         // Register infix parse functions
         registerInfix(TokenType.PLUS, this::parseInfixExpression);
@@ -158,6 +163,7 @@ public class Parser {
         registerInfix(TokenType.AND, this::parseInfixExpression);
         registerInfix(TokenType.OR, this::parseInfixExpression);
         registerInfix(TokenType.LPAREN, this::parseCallExpression);
+        registerInfix(TokenType.LBRACKET, this::parseIndexExpression);
     }
     
     /**
@@ -217,9 +223,16 @@ public class Parser {
             case LBRACE:
                 return parseBlockStatement();
             default:
-                // Check for assignment statements (identifier = expression)
-                if (currentTokenIs(TokenType.IDENTIFIER) && peekTokenIs(TokenType.ASSIGN)) {
-                    return parseAssignmentStatement();
+                // Check for index assignment (array[index] = value)
+                if (currentTokenIs(TokenType.IDENTIFIER)) {
+                    Token lookAhead = peekToken;
+                    if (lookAhead.getType() == TokenType.LBRACKET) {
+                        return parseIndexAssignmentStatement();
+                    }
+                    // Check for assignment statements (identifier = expression)
+                    else if (peekTokenIs(TokenType.ASSIGN)) {
+                        return parseAssignmentStatement();
+                    }
                 }
                 return parseExpressionStatement();
         }
@@ -744,5 +757,115 @@ public class Parser {
         assignmentStatement.setPosition(token.getLine(), token.getColumn());
         
         return assignmentStatement;
+    }
+    
+    /**
+     * Parse an array literal expression [1, 2, 3]
+     */
+    private Node parseArrayLiteral() {
+        Token token = currentToken;  // '[' token
+        List<Node> elements = parseArrayElements();
+        
+        ArrayLiteral arrayLiteral = new ArrayLiteral(elements);
+        arrayLiteral.setPosition(token.getLine(), token.getColumn());
+        
+        return arrayLiteral;
+    }
+    
+    /**
+     * Parse array elements
+     */
+    private List<Node> parseArrayElements() {
+        List<Node> elements = new ArrayList<>();
+        
+        // Handle the case of empty array: []
+        if (peekTokenIs(TokenType.RBRACKET)) {
+            nextToken();
+            return elements;
+        }
+        
+        nextToken();
+        
+        // First element
+        elements.add(parseExpression(Precedence.LOWEST));
+        
+        // Parse the rest of the elements
+        while (peekTokenIs(TokenType.COMMA)) {
+            nextToken();  // consume comma
+            nextToken();  // move to next expression
+            
+            elements.add(parseExpression(Precedence.LOWEST));
+        }
+        
+        if (!expectPeek(TokenType.RBRACKET)) {
+            return null;
+        }
+        
+        return elements;
+    }
+    
+    /**
+     * Parse an index expression (array[index])
+     */
+    private Node parseIndexExpression(Node array) {
+        Token token = currentToken;  // '[' token
+        
+        nextToken();  // Move past '['
+        Node index = parseExpression(Precedence.LOWEST);
+        
+        if (!expectPeek(TokenType.RBRACKET)) {
+            return null;
+        }
+        
+        IndexExpression indexExpression = new IndexExpression(array, index);
+        indexExpression.setPosition(token.getLine(), token.getColumn());
+        
+        return indexExpression;
+    }
+    
+    /**
+     * Parse an index assignment statement (array[index] = value)
+     */
+    private Node parseIndexAssignmentStatement() {
+        Token token = currentToken;  // identifier token
+        String identifier = currentToken.getLiteral();
+        
+        // Create the array identifier node
+        Identifier array = new Identifier(identifier);
+        array.setPosition(token.getLine(), token.getColumn());
+        
+        nextToken();  // Move to '['
+        
+        if (!currentTokenIs(TokenType.LBRACKET)) {
+            errors.add(new Error(
+                "Expected '[' in index expression",
+                currentToken.getLine(),
+                currentToken.getColumn()
+            ));
+            return null;
+        }
+        
+        nextToken();  // Move past '['
+        Node index = parseExpression(Precedence.LOWEST);
+        
+        if (!expectPeek(TokenType.RBRACKET)) {
+            return null;
+        }
+        
+        if (!expectPeek(TokenType.ASSIGN)) {
+            return null;
+        }
+        
+        nextToken();  // Move past '='
+        Node value = parseExpression(Precedence.LOWEST);
+        
+        if (peekTokenIs(TokenType.SEMICOLON)) {
+            nextToken();  // Optional semicolon
+        }
+        
+        IndexAssignmentStatement indexAssignmentStatement = new IndexAssignmentStatement(array, index, value);
+        indexAssignmentStatement.setPosition(token.getLine(), token.getColumn());
+        
+        return indexAssignmentStatement;
     }
 } 

@@ -177,6 +177,12 @@ public class Lexer {
             case '}':
                 token = new Token(TokenType.RBRACE, String.valueOf(ch), line, column);
                 break;
+            case '[':
+                token = new Token(TokenType.LBRACKET, String.valueOf(ch), line, column);
+                break;
+            case ']':
+                token = new Token(TokenType.RBRACKET, String.valueOf(ch), line, column);
+                break;
             case '"':
             case '\'':
                 int startColumn = column;

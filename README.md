@@ -250,6 +250,7 @@ Statement         ::= VariableDeclaration
                     | ReturnStatement
                     | BlockStatement
                     | AssignmentStatement
+                    | IndexAssignmentStatement
                     | ExpressionStatement
 
 /* Declarations */
@@ -265,6 +266,7 @@ ReturnStatement    ::= "return" Expression? (";" | <newline>)?
 /* Block and Assignment */
 BlockStatement     ::= "{" Statement* "}"
 AssignmentStatement ::= Identifier "=" Expression (";" | <newline>)?
+IndexAssignmentStatement ::= Identifier "[" Expression "]" "=" Expression (";" | <newline>)?
 ExpressionStatement ::= Expression (";" | <newline>)?
 
 /* Expressions */
@@ -276,13 +278,15 @@ ComparisonExpression ::= AdditiveExpression (("<" | ">" | "<=" | ">=") AdditiveE
 AdditiveExpression ::= MultiplicativeExpression (("+" | "-") MultiplicativeExpression)*
 MultiplicativeExpression ::= PrefixExpression (("*" | "/" | "%") PrefixExpression)*
 PrefixExpression   ::= ("-" | "!") PrefixExpression | CallExpression
-CallExpression     ::= PrimaryExpression ("(" Arguments? ")")*
+CallExpression     ::= IndexExpression ("(" Arguments? ")")*
+IndexExpression    ::= PrimaryExpression ("[" Expression "]")*
 Arguments          ::= Expression ("," Expression)*
 PrimaryExpression  ::= Identifier 
                     | NumberLiteral 
                     | StringLiteral
                     | BooleanLiteral
                     | NullLiteral
+                    | ArrayLiteral
                     | "(" Expression ")"
 
 /* Literals and Identifiers */
@@ -291,6 +295,7 @@ NumberLiteral      ::= [0-9]+ ("." [0-9]+)?
 StringLiteral      ::= '"' [^"]* '"' | "'" [^']* "'"
 BooleanLiteral     ::= "true" | "false"
 NullLiteral        ::= "null"
+ArrayLiteral       ::= "[" (Expression ("," Expression)*)? "]"
 ```
 
 ## Language Features Summary
@@ -305,13 +310,20 @@ InterpreterJ includes:
    - Numbers (floating point)
    - Strings (with single or double quotes)
    - Booleans (`true` and `false`)
+   - Arrays/Lists (mutable collections of values)
    - `null` value
 6. **Operators**:
    - Arithmetic: `+`, `-`, `*`, `/`, `%`
    - Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
    - Logical: `&&`, `||`, `!`
-7. **Comments**:
-   - Single
+   - Array: `+` (concatenation), `[]` (indexing)
+7. **Array Manipulation**: Functions for working with arrays:
+   - `len(array)`: Get array length
+   - `push(array, value)`: Add element to the end
+   - `pop(array)`: Remove and return the last element
+   - `delete(array, index)`: Remove element at specified index
+8. **Comments**:
+   - Single-line comments with `//`
 
 ## Resource Quotas
 
@@ -406,3 +418,38 @@ public class Main {
         }
     }
 }
+
+```
+
+### Arrays
+
+InterpreterJ supports arrays (lists) with the following operations:
+
+```script
+// Creating arrays
+let empty = [];           // Empty array
+let numbers = [1, 2, 3];  // Array with elements
+let mixed = [1, "two", true, null];  // Arrays can contain mixed types
+
+// Getting array length
+let length = len(numbers);  // Returns 3
+
+// Accessing elements (zero-based indexing)
+let first = numbers[0];    // Returns 1
+let last = numbers[2];     // Returns 3
+
+// Modifying elements
+numbers[1] = 20;           // Now numbers is [1, 20, 3]
+
+// Array concatenation
+let moreNumbers = [4, 5];
+let combined = numbers + moreNumbers;  // Results in [1, 20, 3, 4, 5]
+
+// Array manipulation functions
+push(numbers, 4);          // Add to the end: [1, 20, 3, 4]
+let popped = pop(numbers); // Remove from end: popped = 4, numbers = [1, 20, 3]
+delete(numbers, 0);        // Remove at index: numbers = [20, 3]
+```
+
+
+Arrays are mutable, so changes to an array (through index assignment, push, pop, or delete) affect the original array rather than creating a new one. Only array concatenation with the + operator creates a new array.

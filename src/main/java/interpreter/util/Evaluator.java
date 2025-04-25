@@ -3,6 +3,8 @@ package interpreter.util;
 import interpreter.runtime.ResourceExhaustionError;
 import interpreter.runtime.ResourceExhaustionError.ResourceLimitType;
 import interpreter.runtime.ResourceQuota;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility class with common evaluation methods
@@ -67,6 +69,20 @@ public class Evaluator {
      *         that exceeds the maximum allowed length
      */
     public static Object applyInfixOperator(Object left, String operator, Object right, ResourceQuota resourceQuota) throws ResourceExhaustionError {
+        // Handle special case for array concatenation
+        if (operator.equals("+") && left instanceof List && right instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Object> leftList = (List<Object>) left;
+            @SuppressWarnings("unchecked")
+            List<Object> rightList = (List<Object>) right;
+            
+            // Create a new list to avoid modifying either original
+            List<Object> resultList = new ArrayList<>(leftList);
+            resultList.addAll(rightList);
+            
+            return resultList;
+        }
+        
         // Handle special case for string concatenation
         if (operator.equals("+") && (left instanceof String || right instanceof String)) {
             String leftStr = String.valueOf(left);
