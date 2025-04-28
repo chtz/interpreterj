@@ -20,6 +20,36 @@ import interpreter.runtime.EvaluationContext;
  */
 public class InterpreterTest {
 	@Test
+    @DisplayName("Test newline")
+    public void testNeline() {
+		assertProgram(
+	            "let x = 'AB' + chr(10) + 'C';\n" + // \n not supported!
+	            "x;",
+	            "AB\nC");
+    }
+	
+	@Test
+    @DisplayName("Test newline2")
+    public void testNeline2() {
+		assertProgram(
+	            "let x = 'AB' + chr(10) + 'C';\n" + // \n not supported!
+	            "ord(char(x, 2));",
+	            "10.0");
+    }
+	
+	@Test
+    @DisplayName("Test newline3")
+    public void testNeline3() {
+		assertProgram(
+	            "let x = 'AB' + chr(10) + 'C';\n" + // \n not supported!
+	            "let y = char(x, 2);\n" +
+	            "y == chr(10)",
+	            "true");
+    }
+	
+	//
+	
+	@Test
     @DisplayName("Test calling script function as java function")
 	public void testProgramAsFunction() {
 		Interpreter interpreter = new Interpreter();

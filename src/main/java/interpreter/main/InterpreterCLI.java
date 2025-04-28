@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import interpreter.runtime.ResourceQuota;
+
 /**
  * Command-line interface for the Interpreter.
  * Executes scripts from files and handles errors appropriately.
@@ -36,6 +38,7 @@ public class InterpreterCLI {
 
         // Create interpreter instance
         Interpreter interpreter = new Interpreter();
+        interpreter.setResourceQuota(new ResourceQuota(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
         
         // Parse the script
         Interpreter.ParseResult parseResult = interpreter.parse(sourceCode);
