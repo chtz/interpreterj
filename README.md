@@ -14,6 +14,12 @@ InterpreterJ is a simple yet powerful interpreted scripting language implemented
    - [Maps/Dictionaries](#maps-dictionaries)
    - [Comments](#comments)
 3. [Built-in Functions](#built-in-functions)
+   - [Standard I/O Functions](#standard-io-functions)
+   - [Array Functions](#array-functions)
+   - [Map Functions](#map-functions)
+   - [String Functions](#string-functions)
+   - [Regular Expression Functions](#regular-expression-functions)
+   - [Type Functions](#type-functions)
 4. [Language Grammar (EBNF)](#language-grammar-ebnf)
 5. [Resource Quotas and Security](#resource-quotas-and-security)
 6. [Java API Usage](#java-api-usage)
@@ -59,8 +65,8 @@ let isComplete = false;
 puts(isActive);  // Output: true
 
 // Null
-let empty = null;
-// puts(empty);  // Output: null // FIXME throws exception
+//let empty = null;
+//puts(empty);  // Output: null //FIXME not yet supported
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
@@ -84,9 +90,9 @@ puts(x);  // Output: 15.0
 // Block scoping demonstration
 let a = 5;
 {
-  let a = 10;  // Different variable that shadows outer 'a'
+  let a = 11;  // Different variable that shadows outer 'a'
   let b = 15;  // Only accessible within this block
-  puts(a);     // Output: 10.0
+  puts(a);     // Output: 11.0
 }
 puts(a);       // Output: 5.0 (outer 'a' is unchanged)
 // puts(b);    // Error: Undefined variable 'b'
@@ -95,7 +101,7 @@ puts(a);       // Output: 5.0 (outer 'a' is unchanged)
 <sup><sub>Script Output (generated)</sub></sup>
 ```output
 15.0
-10.0
+11.0
 5.0
 ```
 
@@ -164,11 +170,13 @@ InterpreterJ provides standard control flow constructs:
 let temperature = 75;
 if (temperature > 80) {
   puts("It's hot outside!");
-} else { if (temperature > 60) { // FIXME else if support
-  puts("It's pleasant outside!");  // This will execute
 } else {
-  puts("It's cold outside!");
-} }
+  if (temperature > 60) {
+    puts("It's pleasant outside!");  // This will execute
+  } else {
+    puts("It's cold outside!");
+  }
+}
 
 // While loop
 let counter = 1;
@@ -375,7 +383,7 @@ delete(person, "email");
 puts(len(person));  // Output: 3.0
 
 // Accessing non-existent key returns null
-// puts(person["email"]);  // Output: null // FIXME throws exception
+//puts(person["email"]);  // Output: null // FIXME not yet supported
 
 // Nested maps and arrays
 let complex = {
@@ -426,7 +434,7 @@ puts(x);     // Output: 10.0
 
 ## Built-in Functions
 
-InterpreterJ provides several built-in functions for common operations:
+### Standard I/O Functions
 
 ```script
 // Output function
@@ -434,113 +442,103 @@ puts("Hello, World!");  // Prints to standard output with newline
 
 // Input function
 // let userInput = gets();  // Reads a line from standard input
-
-// Type conversion
-let strNumber = "42";
-let number = int(strNumber);  // Converts string to integer
-puts(number);  // Output: 42.0
-
-// Echo function (returns its argument unchanged)
-let value = echo(123);
-puts(value);  // Output: 123.0
-
-// Array functions
-let arr = [1, 2, 3];
-puts(len(arr));          // Get array length: 3.0
-
-push(arr, 4);            // Add element to end: [1, 2, 3, 4]
-puts(len(arr));          // Output: 4.0
-
-let last = pop(arr);     // Remove and return last element
-puts(last);              // Output: 4.0
-puts(len(arr));          // Output: 3.0
-
-delete(arr, 0);          // Remove element at index 0
-puts(arr[0]);            // Output: 2.0
-puts(len(arr));          // Output: 2.0
-
-// Map functions
-let map = {"a": 1, "b": 2, "c": 3};
-puts(len(map));           // Get map size: 3.0
-
-let mapKeys = keys(map);  // Get array of keys
-puts(mapKeys[0]);         // Output: a (order may vary)
-
-let mapValues = values(map);  // Get array of values
-puts(mapValues[0]);       // Output: 1.0 (order may vary)
-
-delete(map, "b");         // Remove entry with key "b"
-puts(len(map));           // Output: 2.0
-
-// String functions
-let str = "Hello World";
-puts(char(str, 0));       // Get character at index: H
-puts(substr(str, 0, 5));  // Get substring: Hello
-puts(trim("  text  "));   // Trim whitespace: text
-
-// Character conversion
-puts(ord("A"));           // Get ASCII code of a character: 65.0
-puts(chr(66));            // Convert ASCII code to character: B
-
-// String checks
-puts(startsWith(str, "Hello"));  // Check if string starts with prefix: true
-puts(endsWith(str, "World"));    // Check if string ends with suffix: true
-
-// Array to string conversion
-let items = ["apple", "banana", "cherry"];
-puts(join(items, ", "));  // Join array elements: apple, banana, cherry
-
-// Regular expression functions
-let text = "hello123world456";
-
-// Match entire string against pattern
-puts(match(text, "^[a-z]+\\d+[a-z]+\\d+$"));  // true
-
-// Find all matches
-let matches = findAll(text, "\\d+");  // Returns ["123", "456"]
-puts(matches[0]);  // 123
-
-// Replace patterns
-puts(replace(text, "\\d+", "X"));  // helloXworldX
-
-// Split string by delimiter
-let parts = split("a,b,c", ",");
-puts(len(parts));  // 3.0
-
-// Type checking functions
-puts(typeof(42));         // number
-puts(typeof("hello"));    // string
-puts(typeof(true));       // boolean
-puts(typeof(null));       // null
-puts(typeof([1, 2, 3]));  // array
-puts(typeof({"a": 1}));   // map
-puts(typeof(echo));       // function
-
-// Type checking predicates
-puts(isNumber(42));       // true
-puts(isString("hello"));  // true
-puts(isBoolean(true));    // true
-puts(isArray([1, 2, 3])); // true
-puts(isMap({"a": 1}));    // true
-puts(isFunction(echo));   // true
-puts(isNull(null));       // true
 ```
 
 <sup><sub>Script Output (generated)</sub></sup>
 ```output
 Hello, World!
-42
-123.0
+```
+
+
+### Array Functions
+
+```script
+let arr = [1, 2, 3];
+
+// Get array length
+puts(len(arr));          // Output: 3.0
+
+// Add element to end
+push(arr, 4);            // arr becomes [1, 2, 3, 4]
+puts(len(arr));          // Output: 4.0
+
+// Remove and return last element
+let last = pop(arr);     // arr becomes [1, 2, 3]
+puts(last);              // Output: 4.0
+
+// Remove element at index
+delete(arr, 0);          // arr becomes [2, 3]
+puts(arr[0]);            // Output: 2.0
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
 3.0
 4.0
 4.0
-3.0
 2.0
-2.0
+```
+
+
+### Map Functions
+
+```script
+let map = {"a": 1, "b": 2, "c": 3};
+
+// Get map size
+puts(len(map));           // Output: 3.0
+
+// Get array of keys
+let mapKeys = keys(map);  // Returns ["a", "b", "c"]
+puts(mapKeys[0]);         // Output: a
+
+// Get array of values
+let mapValues = values(map);  // Returns [1, 2, 3]
+puts(mapValues[0]);       // Output: 1.0
+
+// Remove entry
+delete(map, "b");         // map becomes {"a": 1, "c": 3}
+puts(len(map));           // Output: 2.0
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
 3.0
 a
 1.0
 2.0
+```
+
+
+### String Functions
+
+```script
+let str = "Hello World";
+
+// Get character at index
+puts(char(str, 0));       // Output: H
+
+// Get substring
+puts(substr(str, 0, 5));  // Output: Hello
+
+// Trim whitespace
+puts(trim("  text  "));   // Output: text
+
+// Character conversion
+puts(ord("A"));           // Output: 65.0
+puts(chr(66));            // Output: B
+
+// String checks
+puts(startsWith(str, "Hello"));  // Output: true
+puts(endsWith(str, "World"));    // Output: true
+
+// Array to string conversion
+let items = ["apple", "banana", "cherry"];
+puts(join(items, ", "));  // Output: apple, banana, cherry
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
 H
 Hello
 text
@@ -549,10 +547,62 @@ B
 true
 true
 apple, banana, cherry
+```
+
+
+### Regular Expression Functions
+
+```script
+let text = "hello123world456";
+
+// Match entire string against pattern
+puts(match(text, "^[a-z]+\\d+[a-z]+\\d+$"));  // Output: true
+
+// Find all matches
+let matches = findAll(text, "\\d+");  // Returns ["123", "456"]
+puts(matches[0]);  // Output: 123
+
+// Replace patterns
+puts(replace(text, "\\d+", "X"));  // Output: helloXworldX
+
+// Split string by delimiter
+let parts = split("a,b,c", ",");
+puts(len(parts));  // Output: 3.0
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
 true
 123
 helloXworldX
 3.0
+```
+
+
+### Type Functions
+
+```script
+// Type checking functions
+puts(typeof(42));         // Output: number
+puts(typeof("hello"));    // Output: string
+puts(typeof(true));       // Output: boolean
+puts(typeof(null));       // Output: null
+puts(typeof([1, 2, 3]));  // Output: array
+puts(typeof({"a": 1}));   // Output: map
+puts(typeof(echo));       // Output: function
+
+// Type checking predicates
+puts(isNumber(42));       // Output: true
+puts(isString("hello"));  // Output: true
+puts(isBoolean(true));    // Output: true
+puts(isArray([1, 2, 3])); // Output: true
+puts(isMap({"a": 1}));    // Output: true
+puts(isFunction(echo));   // Output: true
+puts(isNull(null));       // Output: true
+```
+
+<sup><sub>Script Output (generated)</sub></sup>
+```output
 number
 string
 boolean
@@ -575,7 +625,7 @@ true
 The following EBNF (Extended Backus-Naur Form) grammar defines the syntax of InterpreterJ:
 
 ```ebnf
-/* Program Structure */
+/* Program structure */
 Program             ::= Statement*
 
 /* Statements */
@@ -594,44 +644,44 @@ VariableDeclaration ::= "let" Identifier "=" Expression (";" | <newline>)?
 FunctionDeclaration ::= "def" Identifier "(" Parameters? ")" BlockStatement
 Parameters          ::= Identifier ("," Identifier)*
 
-/* Control Flow */
-IfStatement         ::= "if" "(" Expression ")" BlockStatement 
+/* Control flow */
+IfStatement         ::= "if" "(" Expression ")" BlockStatement
                        ("else" (IfStatement | BlockStatement))?
 WhileStatement      ::= "while" "(" Expression ")" BlockStatement
 ReturnStatement     ::= "return" Expression? (";" | <newline>)?
 
-/* Block and Assignment */
+/* Blocks and Assignments */
 BlockStatement           ::= "{" Statement* "}"
 AssignmentStatement      ::= Identifier "=" Expression (";" | <newline>)?
 IndexAssignmentStatement ::= Identifier "[" Expression "]" "=" Expression (";" | <newline>)?
 ExpressionStatement      ::= Expression (";" | <newline>)?
 
 /* Expressions */
-Expression         ::= OrExpression
-OrExpression       ::= AndExpression ("||" AndExpression)*
-AndExpression      ::= EqualityExpression ("&&" EqualityExpression)*
-EqualityExpression ::= ComparisonExpression (("==" | "!=") ComparisonExpression)*
-ComparisonExpression ::= AdditiveExpression (("<" | ">" | "<=" | ">=") AdditiveExpression)*
-AdditiveExpression ::= MultiplicativeExpression (("+" | "-") MultiplicativeExpression)*
+Expression               ::= OrExpression
+OrExpression             ::= AndExpression ("||" AndExpression)*
+AndExpression            ::= EqualityExpression ("&&" EqualityExpression)*
+EqualityExpression       ::= ComparisonExpression (("==" | "!=") ComparisonExpression)*
+ComparisonExpression     ::= AdditiveExpression (("<" | ">" | "<=" | ">=") AdditiveExpression)*
+AdditiveExpression       ::= MultiplicativeExpression (("+" | "-") MultiplicativeExpression)*
 MultiplicativeExpression ::= PrefixExpression (("*" | "/" | "%") PrefixExpression)*
-PrefixExpression   ::= ("-" | "!") PrefixExpression | CallExpression
-CallExpression     ::= IndexExpression ("(" Arguments? ")")*
-IndexExpression    ::= PrimaryExpression ("[" Expression "]")*
-Arguments          ::= Expression ("," Expression)*
-PrimaryExpression  ::= Identifier 
-                      | NumberLiteral 
-                      | StringLiteral
-                      | BooleanLiteral
-                      | NullLiteral
-                      | ArrayLiteral
-                      | MapLiteral
-                      | "(" Expression ")"
+PrefixExpression         ::= ("-" | "!") PrefixExpression | CallExpression
+CallExpression           ::= IndexExpression ("(" Arguments? ")")*
+IndexExpression          ::= PrimaryExpression ("[" Expression "]")*
+Arguments                ::= Expression ("," Expression)*
+PrimaryExpression        ::= Identifier 
+                            | NumberLiteral 
+                            | StringLiteral
+                            | BooleanLiteral
+                            | NullLiteral
+                            | ArrayLiteral
+                            | MapLiteral
+                            | "(" Expression ")"
 
 /* Literals and Identifiers */
 Identifier         ::= [a-zA-Z_][a-zA-Z0-9_]*
-NumberLiteral      ::= Digit+ ("." Digit+)?
-Digit              ::= [0-9]
-StringLiteral      ::= '"' [^"]* '"' | "'" [^']* "'"
+NumberLiteral      ::= [0-9]+ ("." [0-9]+)?
+StringLiteral      ::= '"' [^"\n]* '"'
+                      | "'" [^'\n]* "'"
 BooleanLiteral     ::= "true" | "false"
 NullLiteral        ::= "null"
 ArrayLiteral       ::= "[" (Expression ("," Expression)*)? "]"
@@ -791,18 +841,24 @@ public class Example {
 def calculate(a, b, operation) {
   if (operation == "+") {
     return a + b;
-  } else { if (operation == "-") {
-    return a - b;
-  } else { if (operation == "*") {
-    return a * b;
-  } else { if (operation == "/") {
-    if (b == 0) {
-      return "Error: Division by zero";
-    }
-    return a / b;
   } else {
-    return "Error: Unknown operation";
-  } } } }
+    if (operation == "-") {
+      return a - b;
+    } else {
+      if (operation == "*") {
+        return a * b;
+      } else {
+        if (operation == "/") {
+          if (b == 0) {
+            return "Error: Division by zero";
+          }
+          return a / b;
+        } else {
+          return "Error: Unknown operation";
+        }
+      }
+    }
+  }
 }
 
 // Test different operations
@@ -840,7 +896,9 @@ def bubbleSort(arr) {
         // Swap elements
         let temp = arr[j];
         arr[j] = arr[j + 1];
-        arr[j + 1] = temp;
+        //arr[j + 1] = temp; // FIXME not yet supported
+        let jPlusOne = j + 1;
+        arr[jPlusOne] = temp;
         swapped = true;
       }
       j = j + 1;
@@ -848,7 +906,7 @@ def bubbleSort(arr) {
     
     // If no swapping occurred in this pass, array is sorted
     if (!swapped) {
-      return arr; // FIXME support break;
+      return arr;
     }
     
     i = i + 1;
@@ -876,9 +934,7 @@ puts(output);  // Output: Sorted array: 11, 12, 22, 25, 34, 64, 90
 
 <sup><sub>Script Output (generated)</sub></sup>
 ```output
-Parse error: Error at 15:7: Expected next token to be RBRACKET, got PLUS instead
-Error at 15:12: No prefix parse function for ASSIGN (=)
-
+Sorted array: 11.0, 12.0, 22.0, 25.0, 34.0, 64.0, 90.0
 ```
 
 
