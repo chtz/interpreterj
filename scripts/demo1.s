@@ -12,7 +12,7 @@ def foo() {
   return i;
 }
 
-puts ('Foo result=' + foo());
+puts ('Foo result=' + foo(1));
 
 let i = 0;
 {

@@ -44,6 +44,10 @@ public class FunctionDeclaration extends Node {
         // Create a function wrapper that will execute the function body
         CallableFunction function = (List<Object> args) -> {
             try {
+            	if (args.size() != parameters.size()) {
+            		throw new RuntimeException("Function " + name + parameters + " called with " + args.size() + " arguments"); //FIXME
+            	}
+            	
                 // Create a new environment with the parent as the current environment
                 EvaluationContext functionContext = context.extend();
                 
