@@ -266,6 +266,24 @@ public class Interpreter {
 	            	return null;
 	            }
 	        });
+			
+			ec.registerFunction("double", args -> {
+	            try {
+	            	return Double.parseDouble(args.get(0).toString());
+	            }
+	            catch (NumberFormatException e) {
+	            	return null;
+	            }
+	        });
+			
+			ec.registerFunction("string", args -> {
+	            try {
+	            	return args.get(0).toString();
+	            }
+	            catch (NumberFormatException e) {
+	            	return null;
+	            }
+	        });
 		}
 	}
     

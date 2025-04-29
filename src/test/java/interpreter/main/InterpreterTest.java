@@ -20,6 +20,16 @@ import interpreter.runtime.EvaluationContext;
  */
 public class InterpreterTest {
 	@Test
+    @DisplayName("Test conversions")
+    public void testConversions() {
+		assertProgram(
+	            "let x = '10';\n" +
+	            "let y = 30;\n" +
+	            "let z = string(int(x) + double(x) + y);",
+	            "50.0");
+    }
+	
+	@Test
     @DisplayName("Test newline")
     public void testNeline() {
 		assertProgram(
