@@ -3,6 +3,7 @@ package interpreter.main;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,6 +20,28 @@ import interpreter.runtime.EvaluationContext;
  * Test suite for the Interpreter
  */
 public class InterpreterTest {
+	@Test
+    @DisplayName("Test false assertion")
+    public void testFalseAssertion() {
+		try {
+			assertProgram(
+		            "assert(1==2, '1 is not 2');",
+		            "");
+			fail();
+		}
+		catch (AssertionError e) {
+			//expected
+		}
+    }
+	
+	@Test
+    @DisplayName("Test true assertion")
+    public void testTrueAssertion() {
+		assertProgram(
+	            "assert(1==1, '1 is not 1');",
+	            "null");
+    }
+	
 	@Test
     @DisplayName("Test conversions")
     public void testConversions() {

@@ -254,6 +254,18 @@ public class Interpreter {
     public final static class DefaultLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
 		@Override
 		public void accept(EvaluationContext ec) {
+			ec.registerFunction("assert", args -> {
+	            try {
+	            	boolean test = (Boolean) args.get(0);
+	            	String message = (String) args.get(1);
+	            	if (!test) throw new AssertionError(message);
+	            	return null;
+	            }
+	            catch (NumberFormatException e) {
+	            	return null;
+	            }
+	        });
+			
 			ec.registerFunction("echo", args -> {
 	            return args.get(0);
 	        });
