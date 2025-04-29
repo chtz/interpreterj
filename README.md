@@ -646,7 +646,7 @@ Parameters          ::= Identifier ("," Identifier)*
 
 /* Control flow */
 IfStatement         ::= "if" "(" Expression ")" BlockStatement
-                       ("else" (IfStatement | BlockStatement))?
+                       ("else" (BlockStatement))?
 WhileStatement      ::= "while" "(" Expression ")" BlockStatement
 ReturnStatement     ::= "return" Expression? (";" | <newline>)?
 
