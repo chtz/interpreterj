@@ -549,8 +549,13 @@ def ReturnStatement_create(value, position) {
     return node;
 }
 
+let returnValueIndicatorMagicValue = "isReturnValue" + random(); //DIRTY HACK
+
 // def ReturnStatement_evaluate(self, context)
 def ReturnStatement_evaluate(self, context) {
+
+    //puts("DEBUG: return eval!"); //FIXME remove DEBUG code
+
     let valueResult = null;
     if (self["value"] != null) {
         valueResult = self["value"]["evaluate"](self["value"], context);
@@ -561,7 +566,7 @@ def ReturnStatement_evaluate(self, context) {
     // ReturnValue wrapper
     let returnValue = {};
     returnValue["value"] = valueResult;
-    returnValue["isReturnValue"]  = true;
+    returnValue[returnValueIndicatorMagicValue]  = true;
     return returnValue;
 }
 
@@ -1047,9 +1052,9 @@ def isReturnValue(result) {
             let keysArr = keys(result);
             let i = 0;
             while (i < len(keysArr)) {
-                if (keysArr[i] == "isReturnValue") {
+                if (keysArr[i] == returnValueIndicatorMagicValue) {
                     //puts("Ret value: " + result); // FIXME //DEBUG
-                    return result["isReturnValue"] == true;
+                    return result[returnValueIndicatorMagicValue] == true;
                 }
                 i = i + 1;
             }
@@ -3036,7 +3041,7 @@ def checkVariableCount(ctx, position) {
 def checkEvaluationSteps(ctx, position) {
     if (ctx["resourceUsage"]["evaluationSteps"] > ctx["resourceQuota"]["maxEvaluationSteps"]) {
         let arr = getLineCol(position);
-        raiseResourceExhaustion(ctx, RESOURCE_LIMIT_EVALUATION_STEPS, arr[0], arr[1]);
+        //FIXME raiseResourceExhaustion(ctx, RESOURCE_LIMIT_EVALUATION_STEPS, arr[0], arr[1]);
     }
 }
 
@@ -3842,6 +3847,7 @@ def threeWrapper(f) {
 }
 
 def DefaultLibraryFunctionsInitializer(context) {
+    context["registerFunction"](context, "random", zeroWrapper(random));
     context["registerFunction"](context, "assert", twoWrapper(assert));
     context["registerFunction"](context, "echo", oneWrapper(echo));
     context["registerFunction"](context, "int", oneWrapper(int));

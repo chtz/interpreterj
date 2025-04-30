@@ -21,6 +21,14 @@ import interpreter.runtime.EvaluationContext;
  */
 public class InterpreterTest {
 	@Test
+    @DisplayName("Test random")
+    public void testRandom() {
+		assertProgram(
+            "random() != random();",
+            "true");
+    }
+	
+	@Test
     @DisplayName("Test false assertion")
     public void testFalseAssertion() {
 		try {

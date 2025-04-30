@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -252,18 +253,26 @@ public class Interpreter {
     }
     
     public final static class DefaultLibraryFunctionsInitializer implements Consumer<EvaluationContext> {
+    	private final SecureRandom secRandom = new SecureRandom();
 		@Override
 		public void accept(EvaluationContext ec) {
 			ec.registerFunction("assert", args -> {
-	            try {
-	            	boolean test = (Boolean) args.get(0);
-	            	String message = (String) args.get(1);
-	            	if (!test) throw new AssertionError(message);
-	            	return null;
-	            }
-	            catch (NumberFormatException e) {
-	            	return null;
-	            }
+            	boolean test = (Boolean) args.get(0);
+            	String message = (String) args.get(1);
+            	if (!test) throw new AssertionError(message);
+            	return null;
+	        });
+			
+			ec.registerFunction("random", args -> {
+				byte[] randomBytes = new byte[16];
+				secRandom.nextBytes(randomBytes);
+
+		        StringBuilder hex = new StringBuilder(32);
+		        hex.append("r");
+		        for (byte b : randomBytes) {
+		            hex.append(String.format("%02x", b));
+		        }
+		        return hex.toString();
 	        });
 			
 			ec.registerFunction("echo", args -> {
@@ -289,12 +298,7 @@ public class Interpreter {
 	        });
 			
 			ec.registerFunction("string", args -> {
-	            try {
-	            	return args.get(0).toString();
-	            }
-	            catch (NumberFormatException e) {
-	            	return null;
-	            }
+            	return args.get(0).toString();
 	        });
 		}
 	}
