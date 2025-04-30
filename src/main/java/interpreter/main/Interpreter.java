@@ -819,7 +819,7 @@ public class Interpreter {
                     String str = (String) strArg;
                     String patternStr = (String) patternArg;
                     // Unescape backslashes in the pattern
-                    patternStr = patternStr.replace("\\\\", "\\");
+                    patternStr = patternStr.replace("\\\\", "\\"); // FIXME
                     
                     // Use -1 as the limit to preserve trailing empty strings
                     String[] parts = str.split(patternStr, -1);
