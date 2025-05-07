@@ -323,6 +323,12 @@ public class Interpreter {
 	    		out.flush();
 	    		return null;
 	        });
+	    	
+	    	ec.registerFunction("print", args -> {
+	    		out.write(args.get(0).toString());
+	    		out.flush();
+	    		return null;
+	        });
 		}
 	}
     
