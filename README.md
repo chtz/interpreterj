@@ -1,3 +1,15 @@
+> ⚠️ **Warning: Abandoned Code Zone Ahead!**  
+> 
+> This repository has entered a state of deep hibernation. 🐻💤  
+> Development has officially come to a halt, and the commit hamster has left the wheel.  
+> 
+> No need to poke around here—nothing new will hatch from this egg. 🥚🚫  
+> 
+> But don't despair, fellow code traveler! The journey continues at a newer, shinier place:  
+> 👉 [https://github.com/chtz/interpreter-ij](https://github.com/chtz/interpreter-ij)  
+> 
+> Follow the link, and may the source be with you. 🚀👩‍💻
+
 # InterpreterJ
 
 InterpreterJ is a simple yet powerful interpreted scripting language implemented in Java. It combines the simplicity of JavaScript-like syntax with powerful features like first-class functions, closures, and block scoping.
