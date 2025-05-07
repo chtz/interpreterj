@@ -9,4 +9,3 @@ while (name != null) {
 }
 
 //<EOF>
-George

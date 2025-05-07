@@ -16,6 +16,7 @@ def makeArrayLiteral(elements, position) {
     // Attach evaluate and toJson "methods" (as map fields)
     literal["evaluate"] = evaluateArrayLiteral;
     literal["toJson"] = arrayLiteralToJson;
+    literal["toGo"] = arrayLiteralToGo;
     return literal;
 }
 
@@ -62,6 +63,30 @@ def arrayLiteralToJson(self) {
     let elementsJson = joinWithCommaSpace(elementsParts);
 
     return '{ "type": "ArrayLiteral", "position": "' + self["position"] + '", "elements": [ ' + elementsJson + ' ] }';
+}
+
+def arrayLiteralToGo(self) {
+    // Go: NewArrayValue(StringValue{val: "x-"})
+    
+    print('NewArrayValue(');
+
+    let elems = self["elements"];
+    let n = len(elems);
+    let i = 0;
+    while (i < n) {
+        if (i > 0) {
+            print(',');
+        }
+        
+        let element = elems[i];
+        if (element["toGo"] != null) {
+            element["toGo"](element);
+        }
+
+        i = i + 1
+    }
+
+    print(')');
 }
 
 // Helper: join array of strings with ", "
@@ -496,6 +521,23 @@ def makeIndexExpression(collectionNode, indexNode, position) {
     }
     node["toJson"] = toJson;
 
+    def toGo(self) {
+        // Go: params.Get(IntValue{val: 0})
+
+        if (self["collection"]["toGo"] != null) {
+            self["collection"]["toGo"](self["collection"])
+        }
+
+        print('.Get(');
+
+        if (node["index"]["toGo"] != null) {
+            node["index"]["toGo"](node["index"])
+        }
+
+        print(')');
+    }
+    node["toGo"] = toGo;
+
     return node
 }
 
@@ -545,6 +587,7 @@ def ReturnStatement_create(value, position) {
 
     // Attach toJson function
     node["toJson"] = ReturnStatement_toJson;
+    node["toGo"] = ReturnStatement_toGo;
 
     return node;
 }
@@ -577,6 +620,18 @@ def ReturnStatement_toJson(self) {
         valueJson = self["value"]["toJson"](self["value"]);
     }
     return '{ "type": "ReturnStatement", "position": "' + self["position"] + '", "value": ' + valueJson + ' }';
+}
+
+def ReturnStatement_toGo(self) {
+    // Go: return 1
+    puts("");
+    print("return ");
+
+    if (self["value"] != null) {
+        if (self["value"]["toGo"] != null) {
+            self["value"]["toGo"](self["value"]);
+        }
+    }
 }
 
 
@@ -627,6 +682,24 @@ def ReturnStatement_toJson(self) {
     }
     node["toJson"] = toJson;
 
+    def toGo(self) {
+      // Go: for i < 3 { .. }
+
+      print('for ');
+
+      if (self["condition"]["toGo"] != null) {
+        self["condition"]["toGo"](self["condition"])
+      }
+      print('.IsTruthy()');
+
+      print(' ');
+
+      if (self["body"]["toGo"] != null) {
+        self["body"]["toGo"](self["body"]);
+      }
+    }
+    node["toGo"] = toGo;
+
     return node;
   }
   
@@ -665,6 +738,7 @@ def makeAssignmentStatement(name, value, position) {
 
     // Attach toJson function explicitly
     node["toJson"] = assignmentStatementToJson;
+    node["toGo"] = assignmentStatementToGo;
     // Attach evaluate function explicitly
     node["evaluate"] = assignmentStatementEvaluate;
     return node;
@@ -682,6 +756,18 @@ def assignmentStatementToJson(self) {
     return '{ "type": "AssignmentStatement", "position": "' + self["position"] +
         '", "name": "' + self["name"] +
         '", "value": ' + valueJson + ' }';
+}
+
+def assignmentStatementToGo(self) {
+    // Go: ctx.Update("i", IntValue{val: i})
+
+    print('ctx.Update("'+self["name"]+'", ');
+
+    if (self["value"]["toGo"] != null) {
+        self["value"]["toGo"](self["value"])
+    }
+
+    print(')');
 }
 
 // assignmentStatementEvaluate function: calls value's evaluate and assigns to context
@@ -711,6 +797,8 @@ def makeExpressionStatement(expression, position) {
     };
     node["evaluate"] = evaluateExpressionStatement;
     node["toJson"] = toJsonExpressionStatement;
+    node["toGo"] = toGoJsonExpressionStatement;
+
     return node;
 }
 
@@ -736,6 +824,16 @@ def toJsonExpressionStatement(self) {
     return '{ "type": "ExpressionStatement", "position": "' + self["position"] + '", "expression": ' + expr + ' }';
 }
 
+def toGoJsonExpressionStatement(self) {
+    let expr = self["expression"]
+    if (expr == null) {
+        return;
+    }
+    if (expr["toGo"] != null) {
+        expr["toGo"](expr);
+    }
+}
+
 
 
 // InfixExpression node constructor and functions in InterpreterJ
@@ -751,6 +849,7 @@ def makeInfixExpression(left, operator, right, position) {
     // Attach functions manually as fields
     node["evaluate"] = evaluateInfixExpression;
     node["toJson"] = infixExpressionToJson;
+    node["toGo"] = infixExpressionToGo;
     return node;
 }
 
@@ -796,6 +895,92 @@ def infixExpressionToJson(self) {
     return json;
 }
 
+def infixExpressionToGo(self) {
+    // Go: val.Multiply(val2)
+
+    if (self["left"]["toGo"] != null) {
+        self["left"]["toGo"](self["left"]);
+    }
+    
+    let op = self["operator"];
+    if (op == "==") {
+        print('.Equals(');
+    }
+    else {
+        if (op == "+") {
+            print('.Add(');
+        }
+        else {
+            if (op == "<") {
+                print('.LessThan(');
+            }
+            else {
+                if (op == "<=") {
+                    print('.LessThanEqual(');
+                }
+                else {
+                    if (op == ">=") {
+                        print('.BiggerThanEqual(');
+                    }    
+                    else {
+                        if (op == ">") {
+                            print('.BiggerThan(');
+                        } 
+                        else {
+                            if (op == "&&") {
+                                print('.And(');
+                            }
+                            else {
+                                if (op == "||") {
+                                    print('.Or(');
+                                }    
+                                else {
+                                    if (op == "*") {
+                                        print('.Multiply(');
+                                    }   
+                                    else {
+                                        if (op == "/") {
+                                            print('.Divide(');
+                                        }
+                                        else {
+                                            if (op == "-") {
+                                                print('.Subtract(');
+                                            }
+                                            else {
+                                                if (op == "!=") {
+                                                    print('.Equals(');
+                                                }
+                                                else {
+                                                    if (op == "%") {
+                                                        print('.Modulo(');
+                                                    }
+                                                    else {   
+                                                        print("/* FIXME infix  " + op + " */"); //GODEBUG 
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }   
+                    }
+                }
+            }
+        }
+    }
+
+    if (self["right"]["toGo"] != null) {
+        self["right"]["toGo"](self["right"]);
+    }
+
+    print(')');
+
+    if (op == "!=") {
+        print('.Not()');
+    }
+}
+
 
 
 // NullLiteral node representation for InterpreterJ
@@ -808,6 +993,7 @@ def makeNullLiteral(position) {
     };
     node["evaluate"] = nullLiteralEvaluate;
     node["toJson"] = nullLiteralToJson;
+    node["toGo"] = nullLiteralToGo;
     return node;
 }
 
@@ -820,6 +1006,10 @@ def nullLiteralEvaluate(self, context) {
 def nullLiteralToJson(self) {
     let json = '{ "type": "NullLiteral", "position": "' + self["position"] + '", "value": null }';
     return json;
+}
+
+def nullLiteralToGo(self) {
+    print('NullVal');
 }
 
 
@@ -899,6 +1089,7 @@ def makeBlockStatement(statements, position) {
     node["addStatement"] = blockStatementAddStatement;
     node["evaluate"] = blockStatementEvaluate;
     node["toJson"] = blockStatementToJson;
+    node["toGo"] = blockStatementToGo;
     return node;
 }
 
@@ -977,11 +1168,41 @@ def blockStatementToJson(self) {
     while (idx < arrLen) {
         elementsJson = elementsJson + arr[idx];
         if (idx < arrLen - 1) {
-            elementsJson = elementsJson + ",\n";
+            elementsJson = elementsJson + "," + chr(10);
         }
         idx = idx + 1;
     }
     return '{ "type": "BlockStatement", "position": "' + self["position"] + '", "statements": [ ' + elementsJson + ' ] }';
+}
+
+def blockStatementToGo(self) {
+    puts("{");
+    puts("ctx := NewContext(ctx)");
+    puts('if ctx == nil {'); //dirty hack to avoid declared and not used: ctx error
+    puts('    fmt.Println("NOOP");');
+    puts('}');
+
+    let stmts = self["statements"];
+    let n = len(stmts);
+    let i = 0;
+    while (i < n) {
+        let stmt = stmts[i];
+        
+        if (i == n-1 && stmt["type"] != "ReturnStatement") { // keep track of last result in case of missing return statement in function
+            if (stmt["type"] == "AssignmentStatement" || stmt["type"] == "IndexAssignmentStatement" || stmt["type"] == "ExpressionStatement") {
+                print('result=');
+            }
+        }
+
+        if (stmt["toGo"] != null) {
+            stmt["toGo"](stmt);
+            puts("");
+        }
+        
+        i = i + 1;
+    }
+
+    print("}"); // to support } else {
 }
 
 
@@ -999,6 +1220,7 @@ def makeFunctionDeclaration(name, parameters, body, position) {
     };
     node["evaluate"] = evaluateFunctionDeclaration;
     node["toJson"] = functionDeclarationToJson;
+    node["toGo"] = functionDeclarationToGo;
     return node;
 }
 
@@ -1096,6 +1318,41 @@ def functionDeclarationToJson(node) {
     return s;
 }
 
+def intString(i) { // HACK to compensate Java-based Interpreter error :-)
+    let i = "" + i;
+    if (endsWith(i,".0")) {
+        i = substr(i, 0, len(i) - 2);
+    }
+    return i;
+}
+
+def functionDeclarationToGo(self) {
+    // Go: ctx.Create("factorial", NewFunctionCommand(func(ctx *Context, params *ArrayValue) (result Value) {
+    //   ctx.Create("x", params.Get(IntValue{val: 0}))
+    //   ...
+	// return result
+	//}))
+    
+    puts('ctx.Create("' + self["name"] + '", NewFunctionCommand(ctx,func(ctx *Context, params *ArrayValue) (result Value) {');
+
+    let i = 0;
+    while (i < len(self["parameters"])) {
+        let param = self["parameters"][i];
+
+        puts('ctx.Create("' + param + '", params.Get(IntValue{val: ' + intString(i) + '}))');
+
+        i = i + 1;
+    }
+
+    if (self["body"]["toGo"] != null) {
+        self["body"]["toGo"](self["body"]);
+    }
+
+    puts("");
+    puts('return result')
+    puts('}))');
+}
+
 
 
 // NumberLiteral node constructor
@@ -1109,6 +1366,8 @@ def makeNumberLiteral(value, position) {
     node["evaluate"] = numberLiteralEvaluate;
     // Attach toJson function
     node["toJson"] = numberLiteralToJson;
+    node["toGo"] = numberLiteralToGo;
+    
     return node;
 }
 
@@ -1127,6 +1386,22 @@ def numberLiteralToJson(node) {
     return typePart + posPart + valuePart + valVal + endPart;
 }
 
+def numberLiteralToGo(self) {
+    // GO: IntValue{val: 3} // FIXME Double?
+    
+    let str = string(self["value"]);
+    let i = 0;
+    while (i < len(str)) {
+        if (char(str, i) == ".") {
+            print('DoubleValue{val: ' +str + '}');
+            return;        
+        }
+        i = i + 1;
+    }
+
+    print('IntValue{val: ' + str + '}');
+}
+
 
 
 // StringLiteral: a literal string AST node
@@ -1143,6 +1418,7 @@ def makeStringLiteral(value, position) {
     node["getValue"] = getStringLiteralValue;
     node["evaluate"] = evaluateStringLiteral;
     node["toJson"] = stringLiteralToJson;
+    node["toGo"] = stringLiteralToGo;
     return node;
 }
 
@@ -1168,6 +1444,26 @@ def stringLiteralToJson(thisNode) {
     return '{ "type": "' + typeString + '", "position": "' + positionString + '", "value": "' + valueString + '" }';
 }
 
+def stringLiteralToGo(self) {
+    // GO: StringValue{val: "x"} 
+    
+    print('StringValue{val: "' + escapeGoStringLiteral(self["value"]) + '"}');
+}
+
+def escapeGoStringLiteral(s) {
+    let r = "";
+    let i = 0;
+    while (i < len(s)) {
+        let c = char(s, i);
+        if (ord(c) == 34) {
+            r = r + chr(92); // FIXME "\" issue with lexer?
+        }
+        r = r + c
+        i = i + 1;
+    }
+    return r;
+}
+
 
 
 // ===============================
@@ -1184,6 +1480,7 @@ def makeBooleanLiteral(value, position) {
     node["getValue"] = getBooleanLiteralValue;
     node["evaluate"] = evaluateBooleanLiteral;
     node["toJson"] = toJsonBooleanLiteral;
+    node["toGo"] = toGoBooleanLiteral;
     return node;
 }
 
@@ -1206,6 +1503,15 @@ def toJsonBooleanLiteral(self) {
     }
 }
 
+def toGoBooleanLiteral(self) {
+    if (self["value"]) {
+        print('TrueValue()');
+    }
+    else {
+        print('FalseValue()');
+    }
+}
+
 
 
 def makeIdentifier(name, position) {
@@ -1217,6 +1523,7 @@ def makeIdentifier(name, position) {
     // Attach evaluator function
     obj["evaluate"] = identifierEvaluate;
     obj["toJson"] = identifierToJson;
+    obj["toGo"] = identifierToGo;
     return obj;
 }
 
@@ -1236,6 +1543,12 @@ def identifierToJson(self) {
     let position = self["position"];
     let name = self["name"];
     return '{ "type": "Identifier", "position": "' + position + '", "name": "' + name + '" }';
+}
+
+def identifierToGo(self) {
+    // Go: hello vs. ctx.Get("hello")
+    
+    print('ctx.Get("' + self["name"] + '")');
 }
 
 
@@ -1770,25 +2083,21 @@ def parseIdentifier() {
 def parseNumberLiteral() {
     let pos = currentToken["line"] + ":" + currentToken["column"];
     let value = 0.0;
-    // Convert string literal to number
-    // No exception support, so check numeric manually or assume conversion works
-    // In InterpreterJ, use dummy parseNumber function or assume parseDouble exists
     let strVal = currentToken["literal"];
-    // Could parse via built-in method or assume a function parseDouble
     value = parseDouble(strVal);
     return makeNumberLiteral(value, pos);
 }
 
 // dummy parseDouble returns default 0 for now (you may implement)
 def parseDouble(str) {
-    // Simulate parse double by relying on numeric string
-    // In InterpreterJ, must be implemented in runtime; for now fallback 0
-    // Alternatively, trust that the numeric string parses as number via implicit conversion
-    // The spec shows NumberLiteral value field is number parse
-    // Using: value = +str; implicit conversion
-    // We do: 
-    // Pretend InterpreterJ has built-in parse numeric:
-    return int(str); //FIXME doule(x) // +str; // Allowed in InterpreterJ? Assume yes
+    let i = 0;
+    while (i < len(str)) {
+        if (char(str, i) == ".") {
+            return double(str);        
+        }
+        i = i + 1;
+    }
+    return int(str); // FIXME PARSER DOUBLE //GOFIX
 }
 
 // parse string literal token
@@ -2161,6 +2470,7 @@ def CallExpression_create(callee, arguments, position) {
     // Attach functions to the node map
     node["evaluate"] = CallExpression_evaluate;
     node["toJson"] = CallExpression_toJson;
+    node["toGo"] = CallExpression_toGo;
 
     return node;
 }
@@ -2302,6 +2612,42 @@ def CallExpression_toJson(self) {
         ', "arguments": [' + argsJson + '] }';
 }
 
+def CallExpression_toGo(self) {
+    //Go: ctx.Get("puts").Execute(ctx, NewArrayValue(StringValue{val: "Computing factorial for:" + val.String()}))
+    
+    let callee = self["callee"];
+
+    //if (callee["name"] == null || callee["name"] == "null") { //GODEBUG FIXME
+    //    print(' /* CallExpression_toGo: calee name null (!): ')
+    //    print(self["toJson"](self));
+    //    print(" , ")
+    //    callee["toGo"](callee); // ctx.Get("element").Get(StringValue{val: "evaluate"})
+    //    print(' */ ')
+    //}
+    // OLD: print('ctx.Get("' + callee["name"] /* broken abstraction */ + '").Execute(ctx, NewArrayValue('); //GOFIX?
+    
+    callee["toGo"](callee);
+    print('.Execute(ctx, NewArrayValue('); 
+
+    let argsLen = len(self["arguments"]);
+    let i = 0;
+    while (i < argsLen) {
+        if (i > 0) {
+            print(',');
+        }
+
+        let argNode = self["arguments"][i];
+        
+        if (argNode["toGo"] != null) {
+            argNode["toGo"](argNode);
+        }
+
+        i = i + 1;
+    }
+
+    print('))');
+}
+
 // Helper: value to string for non-function error message
 def valueToString(val) {
     // Only handle primitive values and arrays/maps simply, for debugging
@@ -2342,7 +2688,9 @@ def panic(error) {
     // This will forcefully stop the interpreter if used.
     // For demo purposes, print to output (remove this if not allowed):
     //puts("PANIC: " + error["message"] + " at " + error["line"] + ":" + error["column"]);
-    assert(false, "PANIC: " + error["message"] + " at " + error["pos"]);
+    //puts("panic(" + error + ")");
+    //assert(false, "PANIC: " + error["message"] + " at " + error["pos"]);
+    assert(false, "panic: " + error);
     // Infinite loop to simulate halt (remove if your engine provides built-in error/throw)
     //FIXME bad idea: while (true) {}
     
@@ -2366,6 +2714,7 @@ def makeIfStatement(condition, consequence, alternative, position) {
     node["evaluate"] = ifStatementEvaluate;
     // Attach toJson function
     node["toJson"] = ifStatementToJson;
+    node["toGo"] = ifStatementToGo;
 
     return node;
 }
@@ -2412,6 +2761,35 @@ def ifStatementToJson(self) {
     }
 
     return '{ "type": "IfStatement", "position": "' + self["position"] + '", "condition": ' + condPart + ', "consequence": ' + consPart + ', "alternative": ' + altPart + ' }';
+}
+
+def ifStatementToGo(self) {
+    // Go: if true {
+	//   return IntValue{val: 100}
+	// } else {
+	//   return IntValue{val: 111}
+    // }
+
+    print('if ');
+
+    if (self["condition"]["toGo"] != null) {
+        self["condition"]["toGo"](self["condition"]);
+    }
+    print('.IsTruthy()');
+
+    print(' ');
+
+    if (self["consequence"]["toGo"] != null) {
+        self["consequence"]["toGo"](self["consequence"])
+    }
+
+    if (self["alternative"] != null) {
+        print(' else ');
+
+        if (self["alternative"]["toGo"] != null) {
+            self["alternative"]["toGo"](self["alternative"])
+        }   
+    }
 }
 
 
@@ -2807,6 +3185,7 @@ def makePrefixExpression(operator, right, position) {
     // Attach functions explicitly
     node["evaluate"] = PrefixExpression_evaluate;
     node["toJson"] = PrefixExpression_toJson;
+    node["toGo"] = PrefixExpression_toGo;
     return node;
 }
 
@@ -2838,6 +3217,32 @@ def PrefixExpression_toJson(self) {
         self["position"] + '", "operator": "' +
         self["operator"] + '", "right": ' +
         rightJson + ' }';
+}
+
+def PrefixExpression_toGo(self) {
+    let op = self["operator"];
+
+    if (op == "-") {
+        print('IntValue{val: -1}.Multiply(');
+
+        if (self["right"]["toGo"] != null) {
+            self["right"]["toGo"](self["right"])
+        }
+
+        print(')');
+    }
+    else {
+        if (op == "!") {
+            if (self["right"]["toGo"] != null) {
+                self["right"]["toGo"](self["right"])
+            }
+
+            print(".Not()")
+        }
+        else {
+            puts(" //FIXME PrefixExpression_toGo " + self["operator"]);
+        }
+    }
 }
 
 
@@ -3296,6 +3701,7 @@ def makeIndexAssignmentStatement(collection, index, value, position) {
     };
     node["evaluate"] = indexAssignmentStatement_evaluate;
     node["toJson"] = indexAssignmentStatement_toJson;
+    node["toGo"] = indexAssignmentStatement_toGo;
     return node;
 }
 
@@ -3316,7 +3722,7 @@ def indexAssignmentStatement_evaluate(self, context) {
             return assignToMap(collectionObject, indexValue, valueToAssign, self["position"]);
         } else {
             // Not an array or map: runtime error
-            throwRuntimeError("Cannot use index operator on non-collection value", self["position"]);
+            throwRuntimeError("Cannot use index operator on non-collection value, got:"+collectionObject, self["position"]);
             return null;
         }
     }
@@ -3363,6 +3769,28 @@ def indexAssignmentStatement_toJson(self) {
         valueJson = self["value"]["toJson"](self["value"]);
     }
     return '{ "type": "IndexAssignmentStatement", "position": "' + self["position"] + '", "collection": ' + collectionJson + ', "index": ' + indexJson + ', "value": ' + valueJson + ' }';
+}
+
+def indexAssignmentStatement_toGo(self) {
+    // Go: foo.Put(IntValue{val: 0}, IntValue{val: 999})
+
+    if (self["collection"]["toGo"] != null) {
+        self["collection"]["toGo"](self["collection"])
+    }
+
+    print('.Put(')
+
+    if (self["index"]["toGo"] != null) {
+        self["index"]["toGo"](self["index"])
+    }
+
+    print(',')
+
+    if (self["value"]["toGo"] != null) {
+        self["value"]["toGo"](self["value"])
+    }
+
+    print(')')
 }
 
 
@@ -3485,6 +3913,42 @@ def makeMapLiteral(pairs, position) {
   }
   node["toJson"] = toJson;
 
+  def toGo(self) {
+    // Go: bar := NewMapValue(KeyValuePair{Key: IntValue{val: 66}, Value: IntValue{val: 999}})
+    
+    print('NewMapValue(');
+
+    let pairsArr = node["pairs"];
+    let i = 0;
+    while (i < len(pairsArr)) {
+      let pair = pairsArr[i];
+      let keyNode = pair["key"];
+      let valueNode = pair["value"];
+
+      if (i > 0) {
+        print(",");
+      }
+      print('KeyValuePair{Key: ');
+
+      if (keyNode["toGo"] != null) {
+        keyNode["toGo"](keyNode)
+      }
+
+      print(', Value: ');
+
+      if (valueNode["toGo"] != null) {
+        valueNode["toGo"](valueNode)
+      }
+
+      print('}');
+
+      i = i + 1
+    }
+
+    print(')');
+  }
+  node["toGo"] = toGo;
+
   return node;
 }
 
@@ -3569,6 +4033,21 @@ def makeProgram() {
     }
     program["toJson"] = toJson;
 
+    def toGo(self) {
+        let stmts = self["statements"];
+        let n = len(stmts);
+        let i = 0;
+        while (i < n) {
+            let stmt = stmts[i];
+            if (stmt["toGo"] != null) {
+                stmt["toGo"](stmt);
+                puts(""); 
+            }
+            i = i + 1;
+        }
+    }
+    program["toGo"] = toGo;
+
     return program;
 }
 
@@ -3584,6 +4063,8 @@ def makeVariableDeclaration(name, initializer, position) {
     }
     node["evaluate"] = evaluateVariableDeclaration
     node["toJson"] = variableDeclarationToJson
+    node["toGo"] = variableDeclarationToGo;
+
     return node
 }
 
@@ -3612,6 +4093,24 @@ def variableDeclarationToJson(self) {
     }
     result = result + ' }'
     return result
+}
+
+def variableDeclarationToGo(self) {
+    // GO: ctx.Create("x", IntValue{val: 3})
+    
+    print('ctx.Create("' + self["name"] + '",');
+    
+    let init = self["initializer"]
+    if (init != null) {
+        if (init["toGo"] != null) {
+            init["toGo"](init);
+        }
+    }
+    else {
+        print('NullVal');
+    }
+
+    puts(')');
 }
 
 
@@ -3778,6 +4277,14 @@ def makeInterpreter() {
     }
     interpreter["getAstJson"] = getAstJson;
 
+    def toGo(self) {
+        if (self["ast"] == null) {
+            return null;
+        }
+        return self["ast"]["toGo"](self["ast"]);
+    }
+    interpreter["toGo"] = toGo;
+
     // Format errors array as multiline string
     def formatErrors(errorsList) {
         if (len(errorsList) == 0) {
@@ -3793,7 +4300,7 @@ def makeInterpreter() {
             if (i == 0) {
                 result = s;
             } else {
-                result = result + "\n" + s;
+                result = result + chr(10) + s;
             }
             i = i + 1;
         }
@@ -3860,6 +4367,7 @@ def DefaultLibraryFunctionsInitializer(context) {
 def StdIOLibraryFunctionsInitializer(context) {
     context["registerFunction"](context, "gets", zeroWrapper(gets));
     context["registerFunction"](context, "puts", oneWrapper(puts));
+    context["registerFunction"](context, "print", oneWrapper(print));
 }
 
 // MapLibraryFunctionsInitializer stub
@@ -3921,21 +4429,25 @@ def TypeLibraryFunctionsInitializer(context) {
 
 let interpreter = makeInterpreter();
 
-def newlinehack(line) {
-    let lines = split(line,"<NEWLINE/>"); // FIXME SUPERHACK ;-)
-    //puts("Split:" + line + " = " +lines);
-    let i = 0;
-    line = "";
-    while (i < len(lines)) {
-        if (i > 0) {
-            line = line + chr(10);
-        }
-        line = line + lines[i];
-        i = i + 1;
-    }
+def newlinehack(line) { // disabled for now, breaks 
+    // let lines = split(line,"<NEWLINE/>"); // FIXME SUPERHACK ;-)
+    // //puts("Split:" + line + " = " +lines);
+    // let i = 0;
+    // line = "";
+    // while (i < len(lines)) {
+    //     if (i > 0) {
+    //         line = line + chr(10);
+    //     }
+    //     line = line + lines[i];
+    //     i = i + 1;
+    // }
+    // return line;
     return line;
 }
 
+let printAst = false;
+let runIt = true;
+let transpileGo = false;
 //let source = "let x = 1 + 2; let y = 10; x * y;";
 def readSources() {
     let source = null;
@@ -3951,6 +4463,15 @@ def readSources() {
         while (line != null) {
             if (line == "//<EOF>") {
                 return source;
+            }
+            if (line == "//<AST>") {
+                printAst = true;
+                runIt = false;
+                return source;
+            }
+            if (line == "//<GO>") {
+                transpileGo = true;
+                runIt = false;
             }
             line = newlinehack(line);
             source = source + chr(10) + line;
@@ -3971,23 +4492,32 @@ if (!(parseResult["success"])) {
     puts("Parse failed with errors: " + interpreter["formatErrors"](interpreter, parseResult["errors"]));
 } else {
     //puts("Parse succeeded.");
-    let evalResult = interpreter["evaluate"](interpreter);
-    if (evalResult["success"]) {
-        //puts("Evaluate succeeded. Result: " + "" + evalResult["result"]);
-        let r = evalResult["result"];
-        if (r != null) {
-            puts("" + r);
+    if (runIt) {
+        let evalResult = interpreter["evaluate"](interpreter);
+        if (evalResult["success"]) {
+            //puts("Evaluate succeeded. Result: " + "" + evalResult["result"]);
+            let r = evalResult["result"];
+            //if (r != null) {
+            //    puts("" + r);
+            //}
+        } else {
+            puts("Evaluation failed with errors: " + interpreter["formatErrors"](interpreter, evalResult["errors"]));
         }
-    } else {
-        puts("Evaluation failed with errors: " + interpreter["formatErrors"](interpreter, evalResult["errors"]));
     }
 }
 
-let astJson = interpreter["getAstJson"](interpreter);
-if (astJson != null) {
-    //puts("AST JSON: " + astJson);
-} else {
-    //puts("No AST to show.");
+if (printAst) {
+    let astJson = interpreter["getAstJson"](interpreter);
+    if (astJson != null) {
+        puts(astJson);
+    } else {
+        puts("No AST to show.");
+    }
+
+}
+
+if (transpileGo) {
+    interpreter["toGo"](interpreter);
 }
 
 assert(interpreter != null, "Interpreter instance should not be null");
