@@ -3367,11 +3367,11 @@ let RESOURCE_LIMIT_EVALUATION_STEPS = "EVALUATION_STEPS";
 // Factory to create ResourceQuota map with default values
 def makeDefaultResourceQuota() {
     let rq = {};
-    rq["maxEvaluationDepth"] =  655350;
-    rq["maxLoopIterations"] =   655350;
-    rq["maxVariableCount"] =    655350;
-    rq["maxEvaluationSteps"] =  655350;
-    rq["maxStringLength"] =     655350;
+    rq["maxEvaluationDepth"] =  65535000;
+    rq["maxLoopIterations"] =   65535000;
+    rq["maxVariableCount"] =    65535000;
+    rq["maxEvaluationSteps"] =  65535000;
+    rq["maxStringLength"] =     65535000;
     return rq;
 }
 
