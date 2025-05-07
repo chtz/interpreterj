@@ -60,3 +60,12 @@ To see the self-hosted interpreter in action, run the demo using:
 
 ```bash
 ./sample.sh
+```
+
+---
+
+## Go Transpilation
+
+The interpreter is capable of compiling IJ scripts to binaries by transpiling the scripts to Go and then using `go build` to create the binary. The binary version of the interpreter (which is even more experimental) is also present in the `examples` directory (see `interpreter_mac_arm64`). You can also use the build script `rebuild_interpreter.sh` to regenerate the interpreter binary. 
+
+Note: Go build tools need to be installed, and the `go` command must be available in your `PATH`.
